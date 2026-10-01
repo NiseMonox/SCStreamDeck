@@ -224,6 +224,12 @@ public sealed class KeybindingProcessorService(
         {
             action.Category = localizedCategory;
         }
+        else if (action.Category.StartsWith('@') &&
+                 !string.IsNullOrEmpty(action.MapLabel) && !action.MapLabel.StartsWith('@'))
+        {
+            // Some action maps reference category keys that global.ini no longer has (e.g. @ui_CCSeatGeneral).
+            action.Category = action.MapLabel;
+        }
     }
 
     private void ApplyOverridesIfPresent(List<KeybindingActionData> actions, string? actionMapsPath)

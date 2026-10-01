@@ -305,6 +305,15 @@ public sealed class LocalizationService(IP4KArchiveService p4KService, IFileSyst
                 continue;
             }
 
+            // Many keys carry a ",P" marker (e.g. "ui_CIMiningMode,P=..."), while defaultProfile.xml references the bare key.
+            int markerIndex = key.IndexOf(',');
+            if (markerIndex > 0)
+            {
+                // An unmarked entry for the same key wins over a marked one.
+                dictionary.TryAdd(TransformIniKey(key[..markerIndex].TrimEnd()), value ?? string.Empty);
+                continue;
+            }
+
             string transformedKey = TransformIniKey(key);
             dictionary[transformedKey] = value ?? string.Empty;
         }

@@ -508,6 +508,24 @@ public sealed class LocalizationServiceTests
     }
 
     [Fact]
+    public void ParseGlobalIni_KeyWithPMarker_IsReachableByBareKey()
+    {
+        Dictionary<string, string> result = LocalizationService.ParseGlobalIni(
+            "ui_CIMiningMode,P=Toggle Mining Operator Mode\nui_CIMiningModeDesc=Mining Mode Toggle");
+
+        result.Should().HaveCount(2);
+        result["@ui_CIMiningMode"].Should().Be("Toggle Mining Operator Mode");
+        result["@ui_CIMiningModeDesc"].Should().Be("Mining Mode Toggle");
+    }
+
+    [Fact]
+    public void ParseGlobalIni_UnmarkedKey_WinsOverMarkedDuplicate()
+    {
+        LocalizationService.ParseGlobalIni("ui_A,P=marked\nui_A=plain")["@ui_A"].Should().Be("plain");
+        LocalizationService.ParseGlobalIni("ui_A=plain\nui_A,P=marked")["@ui_A"].Should().Be("plain");
+    }
+
+    [Fact]
     public void ParseGlobalIni_EmptyKey_Skipped()
     {
         Dictionary<string, string> result = LocalizationService.ParseGlobalIni("key1=value1\n=value\nkey2=value2");

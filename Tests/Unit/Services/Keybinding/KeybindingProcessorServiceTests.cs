@@ -265,6 +265,54 @@ public sealed class KeybindingProcessorServiceTests
     }
 
     [Fact]
+    public async Task ApplyLocalizationAsync_FallsBackToMapLabel_WhenCategoryKeyIsMissing()
+    {
+        Mock<ILocalizationService> mockLocalizationService = new();
+        mockLocalizationService
+            .Setup(x => x.LoadGlobalIniAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, string>
+            {
+                ["@ui_CGSeatGeneral"] = "Vehicles - Seats and Operator Modes"
+            });
+
+        KeybindingProcessorService service = new(
+            Mock.Of<IP4KArchiveService>(),
+            Mock.Of<ICryXmlParserService>(),
+            mockLocalizationService.Object,
+            Mock.Of<IKeybindingXmlParserService>(),
+            Mock.Of<IKeybindingMetadataService>(),
+            Mock.Of<IKeybindingOutputService>(),
+            new SystemFileSystem()
+        );
+
+        List<KeybindingActionData> actions =
+        [
+            new()
+            {
+                Name = "v_toggle_mining_mode", Label = "@label", MapLabel = "@ui_CGSeatGeneral",
+                Category = "@ui_CCSeatGeneral", Bindings = new InputBindings()
+            },
+            new() { Name = "no_map_label", Label = "@label", Category = "@ui_CCMissing", Bindings = new InputBindings() }
+        ];
+
+        SCInstallCandidate installation = new(
+            "C:\\SC",
+            SCChannel.Live,
+            @"C:\SC\LIVE",
+            @"C:\SC\LIVE\Data.p4k"
+        );
+
+        MethodInfo methodInfo = typeof(KeybindingProcessorService)
+            .GetMethod("ApplyLocalizationAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+        await (Task)methodInfo.Invoke(service, [actions, installation, "english", CancellationToken.None])!;
+
+        actions[0].Category.Should().Be("Vehicles - Seats and Operator Modes");
+        actions[1].Category.Should().Be("@ui_CCMissing");
+    }
+
+    [Fact]
     public async Task ApplyLocalizationAsync_DoesNotModify_WhenLocalizationIsEmpty()
     {
         Mock<ILocalizationService> mockLocalizationService = new();
