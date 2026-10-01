@@ -91,10 +91,23 @@ internal static class UserOverrideParser
             });
 
         ApplyDeviceOverrides(actionsByMapAndName, actionsByName, overrides.JoystickByMap, overrides.Joystick,
-            (action, binding) => action.Bindings.Joystick = binding);
+            (action, binding) => action.Bindings.Joystick = string.IsNullOrWhiteSpace(binding) ? null : binding.Trim());
 
         ApplyDeviceOverrides(actionsByMapAndName, actionsByName, overrides.GamepadByMap, overrides.Gamepad,
-            (action, binding) => action.Bindings.Gamepad = binding);
+            (action, binding) => action.Bindings.Gamepad = string.IsNullOrWhiteSpace(binding) ? null : binding.Trim());
+
+        if (overrides.KeyboardMouseActivationModes != null && overrides.KeyboardMouseActivationModesByMap != null)
+        {
+            ApplyDeviceOverrides(actionsByMapAndName, actionsByName, overrides.KeyboardMouseActivationModesByMap,
+                overrides.KeyboardMouseActivationModes,
+                (action, mode) =>
+                {
+                    if (Enum.TryParse(mode, true, out ActivationMode parsed) && Enum.IsDefined(parsed))
+                    {
+                        action.ActivationMode = parsed;
+                    }
+                });
+        }
     }
 
     private static Dictionary<string, Dictionary<string, KeybindingActionData>> BuildActionsByMapAndName(List<KeybindingActionData> actions)
@@ -188,11 +201,13 @@ internal static class UserOverrideParser
         Dictionary<string, string?> mouse = new(StringComparer.OrdinalIgnoreCase);
         Dictionary<string, string?> joystick = new(StringComparer.OrdinalIgnoreCase);
         Dictionary<string, string?> gamepad = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, string?> keyboardMouseModes = new(StringComparer.OrdinalIgnoreCase);
 
         Dictionary<string, Dictionary<string, string?>> keyboardByMap = new(StringComparer.OrdinalIgnoreCase);
         Dictionary<string, Dictionary<string, string?>> mouseByMap = new(StringComparer.OrdinalIgnoreCase);
         Dictionary<string, Dictionary<string, string?>> joystickByMap = new(StringComparer.OrdinalIgnoreCase);
         Dictionary<string, Dictionary<string, string?>> gamepadByMap = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, Dictionary<string, string?>> keyboardMouseModesByMap = new(StringComparer.OrdinalIgnoreCase);
 
         using StringReader sr = new(xmlText);
         using XmlReader xmlReader = XmlReader.Create(sr,
@@ -235,13 +250,14 @@ internal static class UserOverrideParser
             }
 
             ParseActionRebinds(xmlReader, currentMapName, actionName, keyboard, mouse, joystick, gamepad,
-                keyboardByMap, mouseByMap, joystickByMap, gamepadByMap);
+                keyboardByMap, mouseByMap, joystickByMap, gamepadByMap, keyboardMouseModes, keyboardMouseModesByMap);
         }
 
         DeriveGlobalOverrides(keyboard, keyboardByMap);
         DeriveGlobalOverrides(mouse, mouseByMap);
         DeriveGlobalOverrides(joystick, joystickByMap);
         DeriveGlobalOverrides(gamepad, gamepadByMap);
+        DeriveGlobalOverrides(keyboardMouseModes, keyboardMouseModesByMap);
 
         Dictionary<string, IReadOnlyDictionary<string, string?>> keyboardByMapReadOnly = ToReadOnlyByMap(keyboardByMap);
         Dictionary<string, IReadOnlyDictionary<string, string?>> mouseByMapReadOnly = ToReadOnlyByMap(mouseByMap);
@@ -249,7 +265,8 @@ internal static class UserOverrideParser
         Dictionary<string, IReadOnlyDictionary<string, string?>> gamepadByMapReadOnly = ToReadOnlyByMap(gamepadByMap);
 
         return new UserOverrides(keyboard, mouse, joystick, gamepad,
-            keyboardByMapReadOnly, mouseByMapReadOnly, joystickByMapReadOnly, gamepadByMapReadOnly);
+            keyboardByMapReadOnly, mouseByMapReadOnly, joystickByMapReadOnly, gamepadByMapReadOnly,
+            keyboardMouseModes, ToReadOnlyByMap(keyboardMouseModesByMap));
     }
 
     private static void ParseActionRebinds(
@@ -263,7 +280,9 @@ internal static class UserOverrideParser
         Dictionary<string, Dictionary<string, string?>> keyboardByMap,
         Dictionary<string, Dictionary<string, string?>> mouseByMap,
         Dictionary<string, Dictionary<string, string?>> joystickByMap,
-        Dictionary<string, Dictionary<string, string?>> gamepadByMap)
+        Dictionary<string, Dictionary<string, string?>> gamepadByMap,
+        Dictionary<string, string?> keyboardMouseModes,
+        Dictionary<string, Dictionary<string, string?>> keyboardMouseModesByMap)
     {
         int depth = xmlReader.Depth;
 
@@ -288,14 +307,28 @@ internal static class UserOverrideParser
             string prefix = input.Length >= 2 ? input[..2].ToLowerInvariant() : string.Empty;
             string normalized = NormalizeInputSuffix(input);
 
-            if (string.IsNullOrWhiteSpace(normalized))
+            // A blank input after the device prefix (e.g. "kb1_ ") is how Star Citizen stores a binding cleared in-game.
+            if (string.IsNullOrWhiteSpace(normalized) && !IsClearedBinding(input))
             {
                 continue;
             }
 
             ApplyOverride(prefix, mapName, actionName, normalized, keyboard, mouse, joystick, gamepad,
                 keyboardByMap, mouseByMap, joystickByMap, gamepadByMap);
+
+            // Bindings made in-game can carry their own activation mode (e.g. a key bound by double-tapping it).
+            string activationMode = (xmlReader.GetAttribute("activationMode") ?? string.Empty).Trim();
+            if (activationMode.Length > 0 && normalized.Length > 0 && prefix is "kb" or "mo")
+            {
+                ApplyOverrideToTarget(mapName, actionName, activationMode, keyboardMouseModes, keyboardMouseModesByMap);
+            }
         }
+    }
+
+    private static bool IsClearedBinding(string input)
+    {
+        int idx = input.IndexOf('_');
+        return idx >= 2 && string.IsNullOrWhiteSpace(input[(idx + 1)..]);
     }
 
     private static string NormalizeInputSuffix(string input)
@@ -456,6 +489,8 @@ internal static class UserOverrideParser
 /// <param name="Mouse">Mouse binding overrides by action name.</param>
 /// <param name="Joystick">Joystick binding overrides by action name.</param>
 /// <param name="Gamepad">Gamepad binding overrides by action name.</param>
+/// <param name="KeyboardMouseActivationModes">Activation modes set on keyboard/mouse rebinds, by action name.</param>
+/// <param name="KeyboardMouseActivationModesByMap">Activation modes set on keyboard/mouse rebinds, by action map.</param>
 internal sealed record UserOverrides(
     IReadOnlyDictionary<string, string?> Keyboard,
     IReadOnlyDictionary<string, string?> Mouse,
@@ -464,7 +499,9 @@ internal sealed record UserOverrides(
     IReadOnlyDictionary<string, IReadOnlyDictionary<string, string?>> KeyboardByMap,
     IReadOnlyDictionary<string, IReadOnlyDictionary<string, string?>> MouseByMap,
     IReadOnlyDictionary<string, IReadOnlyDictionary<string, string?>> JoystickByMap,
-    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string?>> GamepadByMap)
+    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string?>> GamepadByMap,
+    IReadOnlyDictionary<string, string?>? KeyboardMouseActivationModes = null,
+    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string?>>? KeyboardMouseActivationModesByMap = null)
 {
     /// <summary>
     ///     Gets the total number of overrides across all input types.

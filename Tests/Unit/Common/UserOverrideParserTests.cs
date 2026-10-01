@@ -230,4 +230,98 @@ public sealed class UserOverrideParserTests
         overrides.KeyboardByMap.Should().ContainKey("seat_general");
         overrides.HasOverrides.Should().BeTrue();
     }
+
+    [Fact]
+    public void Parse_ClearedBinding_IsRecordedAsEmptyOverride()
+    {
+        string filePath = WriteActionMaps("""
+                                          <ActionMaps>
+                                            <actionmap name="spaceship_targeting_advanced">
+                                              <action name="v_target_cycle_in_view_fwd">
+                                                <rebind input="kb1_ "/>
+                                              </action>
+                                            </actionmap>
+                                          </ActionMaps>
+                                          """);
+
+        UserOverrides? overrides = UserOverrideParser.Parse(filePath);
+
+        overrides.Should().NotBeNull();
+        overrides.KeyboardByMap["spaceship_targeting_advanced"]["v_target_cycle_in_view_fwd"].Should().BeEmpty();
+        overrides.HasOverrides.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ApplyOverrides_ClearedBindings_RemoveDefaultBindings()
+    {
+        string filePath = WriteActionMaps("""
+                                          <ActionMaps>
+                                            <actionmap name="spaceship_targeting_advanced">
+                                              <action name="v_target_cycle_in_view_fwd">
+                                                <rebind input="kb1_ "/>
+                                                <rebind input="js1_ "/>
+                                              </action>
+                                            </actionmap>
+                                          </ActionMaps>
+                                          """);
+        List<KeybindingActionData> actions =
+        [
+            new()
+            {
+                Name = "v_target_cycle_in_view_fwd",
+                MapName = "spaceship_targeting_advanced",
+                Bindings = new InputBindings { Keyboard = "t", Joystick = "button5" }
+            }
+        ];
+
+        UserOverrideParser.ApplyOverrides(actions, UserOverrideParser.Parse(filePath)!);
+
+        actions[0].Bindings.Keyboard.Should().BeNull();
+        actions[0].Bindings.Mouse.Should().BeNull();
+        actions[0].Bindings.Joystick.Should().BeNull();
+    }
+
+    [Fact]
+    public void ApplyOverrides_RebindActivationMode_OverridesActionMode()
+    {
+        string filePath = WriteActionMaps("""
+                                          <ActionMaps>
+                                            <actionmap name="spaceship_general">
+                                              <action name="v_close_all_doors">
+                                                <rebind input="kb1_f6" activationMode="double_tap"/>
+                                                <rebind input="js2_button38"/>
+                                              </action>
+                                              <action name="v_open_all_doors">
+                                                <rebind input="kb1_f5"/>
+                                              </action>
+                                              <action name="v_lock_all_doors">
+                                                <rebind input="kb1_f7" activationMode="not_a_mode"/>
+                                              </action>
+                                            </actionmap>
+                                          </ActionMaps>
+                                          """);
+        List<KeybindingActionData> actions =
+        [
+            new() { Name = "v_close_all_doors", MapName = "spaceship_general", ActivationMode = ActivationMode.press },
+            new() { Name = "v_open_all_doors", MapName = "spaceship_general", ActivationMode = ActivationMode.tap },
+            new() { Name = "v_lock_all_doors", MapName = "spaceship_general", ActivationMode = ActivationMode.press }
+        ];
+
+        UserOverrideParser.ApplyOverrides(actions, UserOverrideParser.Parse(filePath)!);
+
+        actions[0].Bindings.Keyboard.Should().Be("f6");
+        actions[0].Bindings.Joystick.Should().Be("button38");
+        actions[0].ActivationMode.Should().Be(ActivationMode.double_tap);
+        actions[1].ActivationMode.Should().Be(ActivationMode.tap, "a rebind without activationMode keeps the default");
+        actions[2].ActivationMode.Should().Be(ActivationMode.press, "unknown activation modes are ignored");
+    }
+
+    private static string WriteActionMaps(string xml)
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempDir);
+        string filePath = Path.Combine(tempDir, "actionmaps.xml");
+        File.WriteAllText(filePath, xml);
+        return filePath;
+    }
 }
