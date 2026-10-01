@@ -13,7 +13,7 @@ namespace SCStreamDeck.ActionKeys;
 ///     Supports separate functions for rotate left, rotate right, and dial press.
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Stream Deck action instantiated via SDK reflection")]
-[PluginActionId("com.robdk97.scstreamdeck.adaptivedial")]
+[PluginActionId("com.nisemonox.scstreamdeck.adaptivedial")]
 public sealed class AdaptiveDial(SDConnection connection, InitialPayload payload) : SCDialActionBase(connection, payload)
 {
     public override async void DialRotate(DialRotatePayload payload)

@@ -4,7 +4,7 @@
 
 1. If you installed the **advanced** package, make sure .NET 10 Desktop Runtime x64 is installed. [Requirements](install.md#requirements)
 2. Close Stream Deck completely then open it again.
-3. If the issue persists, go to `%APPDATA%\Elgato\StreamDeck\Plugins\com.robdk97.scstreamdeck.sdPlugin\`.
+3. If the issue persists, go to `%APPDATA%\Elgato\StreamDeck\Plugins\com.nisemonox.scstreamdeck.sdPlugin\`.
 4. Open the plugin log file (`pluginlog.log`) and check for errors.
 5. If you installed the **advanced** package and there is no log file, this usually indicates that .NET 10 Desktop Runtime x64 is not installed correctly (x86 vs x64 issue). Reinstall the correct version.
 
@@ -13,7 +13,7 @@
 1. Confirm the Stream Deck app is version 6.4+.
 2. If you installed the **advanced** package, confirm .NET 10 Desktop Runtime is installed. [Requirements](install.md#requirements)
 3. Close Stream Deck completely then open it again.
-4. Go to `%APPDATA%\Elgato\StreamDeck\Plugins`. If you see a folder named `com.robdk97.scstreamdeck.sdPlugin`, delete it and try reinstalling after confirming steps 1 and 2.
+4. Go to `%APPDATA%\Elgato\StreamDeck\Plugins`. If you see a folder named `com.nisemonox.scstreamdeck.sdPlugin`, delete it and try reinstalling after confirming steps 1 and 2.
 
 ## Double-clicking the downloaded `.streamDeckPlugin` file does nothing
 
@@ -56,7 +56,7 @@ Use a keyboard bind for Stream Deck actions for best reliability.
 
 This has been disabled by default, if you want to enable it:
 
-1. Go to `%APPDATA%\Elgato\StreamDeck\Plugins\com.robdk97.scstreamdeck.sdPlugin\`.
+1. Go to `%APPDATA%\Elgato\StreamDeck\Plugins\com.nisemonox.scstreamdeck.sdPlugin\`.
 2. Open `manifest.json` in a text editor.
 3. Find the line with `"SupportedInMultiActions": false,` and change it to `"SupportedInMultiActions": true,`.
 

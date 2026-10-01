@@ -5,8 +5,8 @@ This plugin lets you control various aspects of Star Citizen from your Elgato St
 
 ## Quick Links
 
-- [Download Simple](https://github.com/ROBdk97/SCStreamDeck/releases/latest/download/com.robdk97.scstreamdeck.runtime-included.streamDeckPlugin)
-- [Download Advanced](https://github.com/ROBdk97/SCStreamDeck/releases/latest/download/com.robdk97.scstreamdeck.runtime-required.streamDeckPlugin)
+- [Download Simple](https://github.com/NiseMonox/SCStreamDeck/releases/latest/download/com.nisemonox.scstreamdeck.runtime-included.streamDeckPlugin)
+- [Download Advanced](https://github.com/NiseMonox/SCStreamDeck/releases/latest/download/com.nisemonox.scstreamdeck.runtime-required.streamDeckPlugin)
 - [Install Guide](install.md)
 - [Troubleshooting](troubleshooting.md)
 - [FAQ](faq.md)

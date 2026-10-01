@@ -1,6 +1,6 @@
 site_name: Star Citizen Stream Deck
 site_description: User guide for the Star Citizen Stream Deck plugin
-site_url: https://robdk97.github.io/SCStreamDeck/
+site_url: https://nisemonox.github.io/SCStreamDeck/
 
 theme:
   name: material
@@ -18,8 +18,8 @@ theme:
     - search.suggest
     - search.highlight
 
-repo_url: https://github.com/ROBdk97/SCStreamDeck
-repo_name: ROBdk97/SCStreamDeck
+repo_url: https://github.com/NiseMonox/SCStreamDeck
+repo_name: NiseMonox/SCStreamDeck
 
 plugins:
   - search

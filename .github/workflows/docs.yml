@@ -1,8 +1,7 @@
 name: Docs
 
 on:
-  push:
-    branches: ["main"]
+  # Deploys to GitHub Pages, which has to be enabled for the repository first.
   pull_request:
     branches: ["main"]
   workflow_dispatch:

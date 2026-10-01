@@ -9,24 +9,24 @@
 
 ## Download the Plugin
 
-- [Download Simple](https://github.com/ROBdk97/SCStreamDeck/releases/latest/download/com.robdk97.scstreamdeck.runtime-included.streamDeckPlugin)
-- [Download Advanced](https://github.com/ROBdk97/SCStreamDeck/releases/latest/download/com.robdk97.scstreamdeck.runtime-required.streamDeckPlugin)
+- [Download Simple](https://github.com/NiseMonox/SCStreamDeck/releases/latest/download/com.nisemonox.scstreamdeck.runtime-included.streamDeckPlugin)
+- [Download Advanced](https://github.com/NiseMonox/SCStreamDeck/releases/latest/download/com.nisemonox.scstreamdeck.runtime-required.streamDeckPlugin)
 
 Choose one of these packages from the latest release:
 
-- **Simple:** [`com.robdk97.scstreamdeck.runtime-included.streamDeckPlugin`](https://github.com/ROBdk97/SCStreamDeck/releases/latest/download/com.robdk97.scstreamdeck.runtime-included.streamDeckPlugin)
-- **Advanced:** [`com.robdk97.scstreamdeck.runtime-required.streamDeckPlugin`](https://github.com/ROBdk97/SCStreamDeck/releases/latest/download/com.robdk97.scstreamdeck.runtime-required.streamDeckPlugin)
+- **Simple:** [`com.nisemonox.scstreamdeck.runtime-included.streamDeckPlugin`](https://github.com/NiseMonox/SCStreamDeck/releases/latest/download/com.nisemonox.scstreamdeck.runtime-included.streamDeckPlugin)
+- **Advanced:** [`com.nisemonox.scstreamdeck.runtime-required.streamDeckPlugin`](https://github.com/NiseMonox/SCStreamDeck/releases/latest/download/com.nisemonox.scstreamdeck.runtime-required.streamDeckPlugin)
 
 **Use the direct buttons above, or if you prefer to browse GitHub manually:**
 
 ### Manual Download from GitHub Releases
 
-1. Open: [https://github.com/ROBdk97/SCStreamDeck/releases](https://github.com/ROBdk97/SCStreamDeck/releases)
+1. Open: [https://github.com/NiseMonox/SCStreamDeck/releases](https://github.com/NiseMonox/SCStreamDeck/releases)
 2. Click the latest release (top entry).
 3. Scroll to `Assets`.
 4. Download either:
-   - `com.robdk97.scstreamdeck.runtime-included.streamDeckPlugin` for the simple install method, or
-   - `com.robdk97.scstreamdeck.runtime-required.streamDeckPlugin` for the advanced install method.
+   - `com.nisemonox.scstreamdeck.runtime-included.streamDeckPlugin` for the simple install method, or
+   - `com.nisemonox.scstreamdeck.runtime-required.streamDeckPlugin` for the advanced install method.
 
 ## Requirements
 

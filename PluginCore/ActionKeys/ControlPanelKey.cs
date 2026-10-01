@@ -16,7 +16,7 @@ namespace SCStreamDeck.ActionKeys;
 ///     Intended as a "settings" UI entrypoint (no-op on press).
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Stream Deck action instantiated via SDK reflection")]
-[PluginActionId("com.robdk97.scstreamdeck.controlpanel")]
+[PluginActionId("com.nisemonox.scstreamdeck.controlpanel")]
 public sealed class ControlPanelKey : KeypadBase
 {
     private const string PiEventConnected = "propertyInspectorConnected";

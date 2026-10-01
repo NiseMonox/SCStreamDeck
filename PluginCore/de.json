@@ -2,11 +2,11 @@
   "Name": "Star Citizen Stream Deck",
   "Description": "Plugin, das bindbare Aktionen für Star Citizen über Stream Deck bereitstellt.\nDieses Plugin wird weder von der Cloud-Imperium- oder Roberts-Space-Industries-Unternehmensgruppe unterstützt noch mit ihr in Verbindung gebracht. Alle Spielinhalte und Materialien sind urheberrechtlich geschützt von Cloud Imperium Rights LLC und Cloud Imperium Rights Ltd. Star Citizen®, Squadron 42®, Roberts Space Industries® und Cloud Imperium® sind eingetragene Marken von Cloud Imperium Rights LLC. Alle Rechte vorbehalten.",
   "Category": "Star Citizen für Stream Deck",
-  "com.robdk97.scstreamdeck.adaptivekey": {
+  "com.nisemonox.scstreamdeck.adaptivekey": {
     "Name": "Adaptive Taste",
     "Tooltip": "Adaptive Taste für Star Citizen"
   },
-  "com.robdk97.scstreamdeck.adaptivedial": {
+  "com.nisemonox.scstreamdeck.adaptivedial": {
     "Name": "Adaptiver Drehregler",
     "Tooltip": "Adaptiver Drehregler für Star Citizen",
     "Encoder": {
@@ -16,11 +16,11 @@
       }
     }
   },
-  "com.robdk97.scstreamdeck.togglekey": {
+  "com.nisemonox.scstreamdeck.togglekey": {
     "Name": "Umschalttaste",
     "Tooltip": "Umschalttaste für Star Citizen"
   },
-  "com.robdk97.scstreamdeck.controlpanel": {
+  "com.nisemonox.scstreamdeck.controlpanel": {
     "Name": "Steuerpanel",
     "Tooltip": "Steuerpanel für Star Citizen",
     "States": [

@@ -10,7 +10,7 @@ on:
 
 env:
     DOTNET_PROJECT: PluginCore\PluginCore.csproj
-    PLUGIN_FOLDER: PluginCore\bin\Release\com.robdk97.scstreamdeck.sdPlugin
+    PLUGIN_FOLDER: PluginCore\bin\Release\com.nisemonox.scstreamdeck.sdPlugin
 
 jobs:
     build-stream-deck-plugin-simple:
@@ -108,14 +108,14 @@ jobs:
                 shell: pwsh
                 run: |
                     Rename-Item `
-                        -Path 'plugin-out\com.robdk97.scstreamdeck.streamDeckPlugin' `
-                        -NewName 'com.robdk97.scstreamdeck.runtime-included.streamDeckPlugin'
+                        -Path 'plugin-out\com.nisemonox.scstreamdeck.streamDeckPlugin' `
+                        -NewName 'com.nisemonox.scstreamdeck.runtime-included.streamDeckPlugin'
 
             -   name: Upload Stream Deck plugin artifact
                 uses: actions/upload-artifact@v4
                 with:
                     name: stream-deck-plugin-simple
-                    path: plugin-out\com.robdk97.scstreamdeck.runtime-included.streamDeckPlugin
+                    path: plugin-out\com.nisemonox.scstreamdeck.runtime-included.streamDeckPlugin
                     if-no-files-found: error
 
     build-stream-deck-plugin-advanced:
@@ -213,14 +213,14 @@ jobs:
                 shell: pwsh
                 run: |
                     Rename-Item `
-                        -Path 'plugin-out\com.robdk97.scstreamdeck.streamDeckPlugin' `
-                        -NewName 'com.robdk97.scstreamdeck.runtime-required.streamDeckPlugin'
+                        -Path 'plugin-out\com.nisemonox.scstreamdeck.streamDeckPlugin' `
+                        -NewName 'com.nisemonox.scstreamdeck.runtime-required.streamDeckPlugin'
 
             -   name: Upload Stream Deck plugin artifact
                 uses: actions/upload-artifact@v4
                 with:
                     name: stream-deck-plugin-advanced
-                    path: plugin-out\com.robdk97.scstreamdeck.runtime-required.streamDeckPlugin
+                    path: plugin-out\com.nisemonox.scstreamdeck.runtime-required.streamDeckPlugin
                     if-no-files-found: error
 
     publish-github-release:

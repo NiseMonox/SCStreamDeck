@@ -3,6 +3,7 @@ MIT License
 Copyright (c) 2019 mhwlng
 Copyright (c) 2025 Jarex985
 Copyright (c) 2026 ROBdk97
+Copyright (c) 2026 NiseMonox
 
 This project includes original work and derivative work based on prior MIT-licensed projects by the copyright holders listed above.
 

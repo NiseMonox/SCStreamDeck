@@ -4,16 +4,16 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <AssemblyName>com.robdk97.scstreamdeck</AssemblyName>
+    <AssemblyName>com.nisemonox.scstreamdeck</AssemblyName>
     <RootNamespace>SCStreamDeck</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AssemblyTitle>SC Stream Deck</AssemblyTitle>
     <AssemblyDescription>Plugin that provides bindable actions for Star Citizen via Stream Deck.</AssemblyDescription>
-    <AssemblyCompany>ROBdk97</AssemblyCompany>
+    <AssemblyCompany>NiseMonox</AssemblyCompany>
     <AssemblyProduct>SC Stream Deck</AssemblyProduct>
-    <AssemblyCopyright>Copyright 2025 ROBdk97</AssemblyCopyright>
+    <AssemblyCopyright>Copyright 2026 NiseMonox</AssemblyCopyright>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
     <ComVisible>false</ComVisible>
@@ -25,10 +25,10 @@
     <NoWarn>NU1701, CA1014</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>bin\Debug\com.robdk97.scstreamdeck.sdPlugin\</OutputPath>
+    <OutputPath>bin\Debug\com.nisemonox.scstreamdeck.sdPlugin\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <OutputPath>bin\Release\com.robdk97.scstreamdeck.sdPlugin\</OutputPath>
+    <OutputPath>bin\Release\com.nisemonox.scstreamdeck.sdPlugin\</OutputPath>
   </PropertyGroup>
 
   <!-- EditorConfig -->

@@ -34,7 +34,7 @@ See [Themes](themes.md).
 
 Use GitHub Issues if possible:
 
-- [https://github.com/ROBdk97/SCStreamDeck/issues](https://github.com/ROBdk97/SCStreamDeck/issues)
+- [https://github.com/NiseMonox/SCStreamDeck/issues](https://github.com/NiseMonox/SCStreamDeck/issues)
 
 Include:
 

@@ -4,8 +4,8 @@
 
 1. Uninstall the old version (see below).
 2. Download the correct latest-release package:
-   - [Simple / runtime included](https://github.com/ROBdk97/SCStreamDeck/releases/latest/download/com.robdk97.scstreamdeck.runtime-included.streamDeckPlugin)
-   - [Advanced / runtime required](https://github.com/ROBdk97/SCStreamDeck/releases/latest/download/com.robdk97.scstreamdeck.runtime-required.streamDeckPlugin)
+   - [Simple / runtime included](https://github.com/NiseMonox/SCStreamDeck/releases/latest/download/com.nisemonox.scstreamdeck.runtime-included.streamDeckPlugin)
+   - [Advanced / runtime required](https://github.com/NiseMonox/SCStreamDeck/releases/latest/download/com.nisemonox.scstreamdeck.runtime-required.streamDeckPlugin)
 3. Double-click it to install.
 
 !!! important "Uninstall required"
@@ -21,6 +21,6 @@
 3. Go to the `Plugins` tab.
 4. Select `Star Citizen Stream Deck`.
 5. Right-click and choose `Uninstall`.
-6. If this doesn't work, close the Stream Deck software, go to `%APPDATA%\Elgato\StreamDeck\Plugins`, and delete the folder named `com.robdk97.scstreamdeck.sdPlugin`.
+6. If this doesn't work, close the Stream Deck software, go to `%APPDATA%\Elgato\StreamDeck\Plugins`, and delete the folder named `com.nisemonox.scstreamdeck.sdPlugin`.
 
 

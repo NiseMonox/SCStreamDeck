@@ -9,10 +9,10 @@ if errorlevel 1 (
 )
 
 set "DOTNET_PROJECT=PluginCore\PluginCore.csproj"
-set "PLUGIN_FOLDER=PluginCore\bin\Release\com.robdk97.scstreamdeck.sdPlugin"
+set "PLUGIN_FOLDER=PluginCore\bin\Release\com.nisemonox.scstreamdeck.sdPlugin"
 set "PLUGIN_OUT=plugin-out"
-set "SIMPLE_PACKAGE=com.robdk97.scstreamdeck.runtime-included.streamDeckPlugin"
-set "ADVANCED_PACKAGE=com.robdk97.scstreamdeck.runtime-required.streamDeckPlugin"
+set "SIMPLE_PACKAGE=com.nisemonox.scstreamdeck.runtime-included.streamDeckPlugin"
+set "ADVANCED_PACKAGE=com.nisemonox.scstreamdeck.runtime-required.streamDeckPlugin"
 set "VERSION=%~1"
 
 if "%VERSION%"=="" (
@@ -94,7 +94,7 @@ echo [5/6] Packing simple package...
 call streamdeck pack "%PLUGIN_FOLDER%" -o "%PLUGIN_OUT%" --version "%VERSION%" -f
 if errorlevel 1 goto fail
 if exist "%PLUGIN_OUT%\%SIMPLE_PACKAGE%" del /q "%PLUGIN_OUT%\%SIMPLE_PACKAGE%"
-move /y "%PLUGIN_OUT%\com.robdk97.scstreamdeck.streamDeckPlugin" "%PLUGIN_OUT%\%SIMPLE_PACKAGE%" >nul
+move /y "%PLUGIN_OUT%\com.nisemonox.scstreamdeck.streamDeckPlugin" "%PLUGIN_OUT%\%SIMPLE_PACKAGE%" >nul
 if errorlevel 1 goto fail
 
 echo [4/6] Publishing advanced package ^(runtime required^)...
@@ -117,7 +117,7 @@ echo [5/6] Packing advanced package...
 call streamdeck pack "%PLUGIN_FOLDER%" -o "%PLUGIN_OUT%" --version "%VERSION%" -f
 if errorlevel 1 goto fail
 if exist "%PLUGIN_OUT%\%ADVANCED_PACKAGE%" del /q "%PLUGIN_OUT%\%ADVANCED_PACKAGE%"
-move /y "%PLUGIN_OUT%\com.robdk97.scstreamdeck.streamDeckPlugin" "%PLUGIN_OUT%\%ADVANCED_PACKAGE%" >nul
+move /y "%PLUGIN_OUT%\com.nisemonox.scstreamdeck.streamDeckPlugin" "%PLUGIN_OUT%\%ADVANCED_PACKAGE%" >nul
 if errorlevel 1 goto fail
 
 echo [6/6] Created package(s):
