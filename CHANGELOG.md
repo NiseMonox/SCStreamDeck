@@ -15,6 +15,25 @@ Notes:
 
 ---
 
+## v1.3.0.0 - Minor Release (NiseMonox fork)
+
+> [!WARNING]
+> The plugin UUID is now `com.nisemonox.scstreamdeck`. It installs next to `com.robdk97.scstreamdeck` instead of updating
+> it, so keys set up with the upstream plugin have to be added again.
+
+### Bug Fixes
+
+- Bindings cleared in-game (`<rebind input="kb1_ "/>` in `actionmaps.xml`) are no longer ignored, so the plugin stops showing and sending the default key.
+- A rebind's own `activationMode` (e.g. a key bound in-game by double-tapping it) now overrides the action's default activation mode.
+- `double_tap` / `double_tap_nonblocking` actions now send two taps instead of one, so they fire in-game.
+- `global.ini` keys with a `,P` marker (e.g. `ui_CIMiningMode,P=`) are resolved, and categories whose key is missing from `global.ini` fall back to the action map label. On 4.10 LIVE this leaves 2 of 753 labels unresolved (was 63).
+
+### Internal / Refactor
+
+- `global.json` rolls forward to newer .NET 10 SDK feature bands.
+- The docs workflow no longer deploys to GitHub Pages on every push to `main`; run it manually.
+- Added `Tools/install-local.ps1` to build, install into Stream Deck and restart it.
+
 ## v1.2.4.1 - Patch Release
 
 ### Bug Fixes

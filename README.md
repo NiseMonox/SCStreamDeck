@@ -1,9 +1,17 @@
 ![Star Citizen Stream Deck Plugin](./docs/assets/images/scsd-banner.png)
 
+> **About this fork:** a fork of [ROBdk97/SCStreamDeck](https://github.com/ROBdk97/SCStreamDeck) v1.2.4.1 (itself a fork of
+> [Jarex985/SCStreamDeck](https://github.com/Jarex985/SCStreamDeck)), checked against Star Citizen 4.10 LIVE, with these fixes:
+>
+> - Bindings cleared in-game (`<rebind input="kb1_ "/>` in `actionmaps.xml`) are honored instead of falling back to the default key.
+> - A rebind's own `activationMode` (e.g. a key bound by double-tapping it) is honored.
+> - Double-tap activation modes really tap twice, so actions such as *Power Throttle Max* (double-tap F10) fire in-game.
+> - `global.ini` keys with a `,P` marker resolve, and categories missing from `global.ini` fall back to the action map name, so
+>   labels no longer show up as raw `@ui_...` keys.
+> - The plugin UUID is `com.nisemonox.scstreamdeck`, so it installs next to the upstream plugin instead of replacing it.
 
-User Guide: https://robdk97.github.io/SCStreamDeck/  
-Download latest Release: [Here](https://github.com/ROBdk97/SCStreamDeck/releases/latest)  
-Report bugs / feature requests: https://github.com/ROBdk97/SCStreamDeck/issues
+User Guide: [docs](docs/index.md)  
+Report bugs / feature requests: https://github.com/NiseMonox/SCStreamDeck/issues
 
 <br>
 
@@ -19,30 +27,39 @@ Report bugs / feature requests: https://github.com/ROBdk97/SCStreamDeck/issues
 [![Windows 10+](https://img.shields.io/badge/Windows-10%2B-blue?logo=windows&logoColor=white)](https://www.microsoft.com/windows)
 [![Stream Deck v6.4+](https://img.shields.io/badge/Stream%20Deck%20App-6.4%2B-purple?logo=elgato&logoColor=white)](https://www.elgato.com/s/stream-deck-app)
 
-## Installation Options
+## Installation
+
+There is no prebuilt release of this fork yet. Build and install from source with the
+[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (the plugin runs on the .NET 10 Desktop Runtime x64):
+
+```powershell
+.\Tools\install-local.ps1
+```
+
+The script builds the plugin in Release, copies `PluginCore\bin\Release\com.nisemonox.scstreamdeck.sdPlugin` into
+`%APPDATA%\Elgato\StreamDeck\Plugins` (keeping the plugin's `cache` folder with its settings) and restarts Stream Deck.
+
+Pushing a `v*` tag runs the release workflow, which publishes ready-to-install `.streamDeckPlugin` packages:
 
 | Method | Package | Runtime requirement |
 | --- | --- | --- |
-| Simple | [`com.robdk97.scstreamdeck.runtime-included.streamDeckPlugin`](https://github.com/ROBdk97/SCStreamDeck/releases/latest/download/com.robdk97.scstreamdeck.runtime-included.streamDeckPlugin) | None |
-| Advanced | [`com.robdk97.scstreamdeck.runtime-required.streamDeckPlugin`](https://github.com/ROBdk97/SCStreamDeck/releases/latest/download/com.robdk97.scstreamdeck.runtime-required.streamDeckPlugin) | Install [.NET 10 Desktop Runtime x64](https://dotnet.microsoft.com/download/dotnet/10.0) |
+| Simple | `com.nisemonox.scstreamdeck.runtime-included.streamDeckPlugin` | None |
+| Advanced | `com.nisemonox.scstreamdeck.runtime-required.streamDeckPlugin` | Install [.NET 10 Desktop Runtime x64](https://dotnet.microsoft.com/download/dotnet/10.0) |
 
 ## Project Info
 
 ### Status
-[![GitHub release](https://img.shields.io/github/release/ROBdk97/SCStreamDeck?include_prereleases=&sort=semver&color=2ea44f)](https://github.com/ROBdk97/SCStreamDeck/releases/)
+[![GitHub release](https://img.shields.io/github/release/NiseMonox/SCStreamDeck?include_prereleases=&sort=semver&color=2ea44f)](https://github.com/NiseMonox/SCStreamDeck/releases/)
 [![License](https://img.shields.io/badge/License-MIT-2ea44f)](LICENSE.md)
 [![Contributions - welcome](https://img.shields.io/badge/Contributions-welcome-2ea44f)](CONTRIBUTING.md)  
 
-![Code scanning](https://github.com/ROBdk97/SCStreamDeck/workflows/CodeQL/badge.svg)
-[![CI](https://github.com/ROBdk97/SCStreamDeck/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ROBdk97/SCStreamDeck/actions/workflows/ci.yml)
+[![CI](https://github.com/NiseMonox/SCStreamDeck/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/NiseMonox/SCStreamDeck/actions/workflows/ci.yml)
 
 ### Programming Languages
 [![C#](https://img.shields.io/badge/C%23-239120?logo=c-sharp&logoColor=white)](https://learn.microsoft.com/dotnet/csharp)
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)](https://developer.mozilla.org/docs/Web/HTML)
 [![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)](https://developer.mozilla.org/docs/Web/CSS)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/docs/Web/JavaScript)
-### Support / Funding
-[![PayPal](https://img.shields.io/badge/PayPal-Support-blue?style=flat&logo=paypal&logoColor=white)](https://www.paypal.me/robdk97)
 
 
 
@@ -64,7 +81,7 @@ Report bugs / feature requests: https://github.com/ROBdk97/SCStreamDeck/issues
 
 ## Installation
 
-See the full installation guide: https://robdk97.github.io/SCStreamDeck/install/
+See the full installation guide: https://nisemonox.github.io/SCStreamDeck/install/
 
 ## Known Limitations
 
@@ -98,3 +115,4 @@ This project was inspired by the following repositories (code rewritten from scr
 - [SCJMapper-V2 by SCToolsfactory](https://github.com/SCToolsfactory/SCJMapper-V2) - for the great work on Star Citizen keybindings extraction.
 - [streamdeck-starcitizen by mhwlng](https://github.com/mhwlng/streamdeck-starcitizen) - for the initial idea of a Stream Deck plugin for Star Citizen. :)
 - [SCStreamDeck by Jarex985](https://github.com/Jarex985/SCStreamDeck) - Forked/Optimized/Modernized because the owner was inactive
+- [SCStreamDeck by ROBdk97](https://github.com/ROBdk97/SCStreamDeck) - the maintained fork (Adaptive Dial, .NET 10, plugin localization) this repository is based on
