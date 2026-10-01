@@ -62,6 +62,31 @@ public sealed class ImmediatePressHandlerTests
     }
 
     [Fact]
+    public void Execute_DoubleTap_TapsTwiceOnKeyDown_AndNothingOnKeyUp()
+    {
+        ImmediatePressHandler handler = new();
+        RecordingInputExecutor exec = new();
+
+        ActivationModeMetadata metadata = new()
+        {
+            OnPress = true,
+            OnRelease = false,
+            Retriggerable = false,
+            MultiTap = 2,
+            MultiTapBlock = 1,
+            ReleaseTriggerDelay = 0,
+            ReleaseTriggerThreshold = -1
+        };
+
+        handler.Execute(Ctx(true, ActivationMode.double_tap, InputType.Keyboard, metadata), exec).Should().BeTrue();
+        handler.Execute(Ctx(false, ActivationMode.double_tap, InputType.Keyboard, metadata), exec).Should().BeTrue();
+
+        exec.PressNoRepeatCount.Should().Be(2);
+        exec.DownCount.Should().Be(0);
+        exec.UpCount.Should().Be(0);
+    }
+
+    [Fact]
     public void Execute_OnRelease_IsBlocked_WhenMultiTapBlockWasSetOnPress()
     {
         ImmediatePressHandler handler = new();

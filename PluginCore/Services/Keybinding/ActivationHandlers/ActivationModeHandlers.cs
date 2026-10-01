@@ -68,6 +68,10 @@ internal sealed class ImmediatePressHandler(Func<DateTime>? utcNow = null) : IAc
             _mouseWheelHoldActions[context.ActionName] = true;
             result = executor.ExecuteDown(context.Input, context.ActionName);
         }
+        else if (context.Metadata.MultiTap > 1)
+        {
+            result = ExecuteMultiTap(context, executor);
+        }
         else
         {
             result = context.Metadata.Retriggerable
@@ -134,6 +138,30 @@ internal sealed class ImmediatePressHandler(Func<DateTime>? utcNow = null) : IAc
 
         // For non-retriggerable modes (e.g., hold_toggle with MultiTapBlock),
         // OnRelease was already blocked above, so just return success
+        return true;
+    }
+
+    /// <summary>
+    ///     Double-tap modes (MultiTap = 2) only fire in-game when the input is tapped that many times in quick succession.
+    ///     Each tap holds the key ~50 ms, so the whole sequence stays well inside Star Citizen's multi-tap window.
+    /// </summary>
+    private static bool ExecuteMultiTap(ActivationExecutionContext context, IInputExecutor executor)
+    {
+        const int gapBetweenTapsMs = 50;
+
+        for (int tap = 0; tap < context.Metadata.MultiTap; tap++)
+        {
+            if (tap > 0)
+            {
+                Thread.Sleep(gapBetweenTapsMs);
+            }
+
+            if (!executor.ExecutePressNoRepeat(context.Input))
+            {
+                return false;
+            }
+        }
+
         return true;
     }
 }
