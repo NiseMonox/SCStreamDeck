@@ -265,6 +265,74 @@ public sealed class KeybindingProcessorServiceTests
     }
 
     [Fact]
+    public async Task ApplyLocalizationAsync_ResolvesKeysWithoutUiPrefix_AndReleasesLocalizationCache()
+    {
+        Mock<ILocalizationService> mockLocalizationService = new();
+        mockLocalizationService
+            .Setup(x => x.LoadGlobalIniAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, string>
+            {
+                ["interaction_toggleEquipHelmet"] = "Toggle Equip Helmet",
+                ["LOC_EMPTY"] = string.Empty
+            });
+
+        KeybindingProcessorService service = new(
+            Mock.Of<IP4KArchiveService>(),
+            Mock.Of<ICryXmlParserService>(),
+            mockLocalizationService.Object,
+            Mock.Of<IKeybindingXmlParserService>(),
+            Mock.Of<IKeybindingMetadataService>(),
+            Mock.Of<IKeybindingOutputService>(),
+            new SystemFileSystem()
+        );
+
+        List<KeybindingActionData> actions =
+        [
+            new()
+            {
+                Name = "toggleEquipHelmet", Label = "@interaction_toggleEquipHelmet", Description = "@LOC_EMPTY",
+                Category = "Player", Bindings = new InputBindings()
+            },
+            new() { Name = "empty_label", Label = "@LOC_EMPTY", Category = "Player", Bindings = new InputBindings() }
+        ];
+
+        SCInstallCandidate installation = new(
+            "C:\\SC",
+            SCChannel.Live,
+            @"C:\SC\LIVE",
+            @"C:\SC\LIVE\Data.p4k"
+        );
+
+        MethodInfo methodInfo = typeof(KeybindingProcessorService)
+            .GetMethod("ApplyLocalizationAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+        await (Task)methodInfo.Invoke(service, [actions, installation, "english", CancellationToken.None])!;
+
+        actions[0].Label.Should().Be("Toggle Equip Helmet");
+        actions[0].Description.Should().BeEmpty();
+        actions[1].Label.Should().Be("@LOC_EMPTY", "an empty translation must not blank out a label");
+        mockLocalizationService.Verify(x => x.ClearCache(@"C:\SC\LIVE", "english"), Times.Once);
+    }
+
+    [Fact]
+    public void IsPlainXml_RecognisesCryXmlBySignature_NotByAStrayAngleBracketByte()
+    {
+        static bool IsPlainXml(byte[] bytes) =>
+            (bool)typeof(KeybindingProcessorService)
+                .GetMethod("IsPlainXml", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { bytes })!;
+
+        // A CryXmlB header whose node count happens to be 60 (0x3C, the '<' character).
+        byte[] cryXml = [.. "CryXmlB\0"u8, 0, 0, 0, 0, 0x2C, 0, 0, 0, 0x3C, 0, 0, 0, .. new byte[40]];
+
+        IsPlainXml(cryXml).Should().BeFalse();
+        IsPlainXml(Encoding.UTF8.GetBytes("<ActionMaps />")).Should().BeTrue();
+        IsPlainXml([.. Encoding.UTF8.Preamble, .. Encoding.UTF8.GetBytes("\r\n  <ActionMaps />")]).Should().BeTrue();
+        IsPlainXml(Encoding.UTF8.GetBytes("not xml <at all>")).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task ApplyLocalizationAsync_FallsBackToMapLabel_WhenCategoryKeyIsMissing()
     {
         Mock<ILocalizationService> mockLocalizationService = new();

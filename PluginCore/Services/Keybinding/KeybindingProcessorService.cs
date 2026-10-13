@@ -3,6 +3,7 @@ using SCStreamDeck.Logging;
 using SCStreamDeck.Models;
 using SCStreamDeck.Services.Core;
 using SCStreamDeck.Services.Data;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace SCStreamDeck.Services.Keybinding;
@@ -196,31 +197,38 @@ public sealed class KeybindingProcessorService(
         {
             Log.Err($"[{nameof(KeybindingProcessorService)}] Failed to load localization", ex);
         }
+        finally
+        {
+            // global.ini has ~90,000 entries and only the action labels are needed; do not keep it for the
+            // lifetime of the plugin.
+            _localizationService.ClearCache(installation.ChannelPath, language);
+        }
     }
 
     private static void ApplyLocalization(
         IReadOnlyDictionary<string, string> localization,
         KeybindingActionData action)
     {
-        if (localization.TryGetValue(action.Label, out string? localizedLabel))
+        // An empty translation (e.g. LOC_EMPTY) is fine for a description but would hide a label.
+        if (TryLocalize(localization, action.Label, out string? localizedLabel) &&
+            !string.IsNullOrWhiteSpace(localizedLabel))
         {
             action.Label = localizedLabel;
         }
 
-        if (!string.IsNullOrEmpty(action.Description) &&
-            localization.TryGetValue(action.Description, out string? localizedDesc))
+        if (TryLocalize(localization, action.Description, out string? localizedDesc))
         {
             action.Description = localizedDesc;
         }
 
-        if (!string.IsNullOrEmpty(action.MapLabel) &&
-            localization.TryGetValue(action.MapLabel, out string? localizedMapLabel))
+        if (TryLocalize(localization, action.MapLabel, out string? localizedMapLabel) &&
+            !string.IsNullOrWhiteSpace(localizedMapLabel))
         {
             action.MapLabel = localizedMapLabel;
         }
 
-        if (!string.IsNullOrEmpty(action.Category) &&
-            localization.TryGetValue(action.Category, out string? localizedCategory))
+        if (TryLocalize(localization, action.Category, out string? localizedCategory) &&
+            !string.IsNullOrWhiteSpace(localizedCategory))
         {
             action.Category = localizedCategory;
         }
@@ -230,6 +238,25 @@ public sealed class KeybindingProcessorService(
             // Some action maps reference category keys that global.ini no longer has (e.g. @ui_CCSeatGeneral).
             action.Category = action.MapLabel;
         }
+    }
+
+    /// <summary>
+    ///     Looks up a "@key" reference. The localization dictionary stores "ui_" keys with their "@" prefix and all
+    ///     other keys (e.g. interaction_toggleEquipHelmet, PIT_Emote) bare.
+    /// </summary>
+    private static bool TryLocalize(
+        IReadOnlyDictionary<string, string> localization,
+        string? reference,
+        [NotNullWhen(true)] out string? localized)
+    {
+        localized = null;
+        if (string.IsNullOrEmpty(reference))
+        {
+            return false;
+        }
+
+        return localization.TryGetValue(reference, out localized) ||
+               (reference.Length > 1 && reference[0] == '@' && localization.TryGetValue(reference[1..], out localized));
     }
 
     private void ApplyOverridesIfPresent(List<KeybindingActionData> actions, string? actionMapsPath)
@@ -258,8 +285,26 @@ public sealed class KeybindingProcessorService(
         }
     }
 
-    private static bool IsPlainXml(byte[] xmlBytes) =>
-        xmlBytes[0] == (byte)'<' || xmlBytes.Take(Math.Min(64, xmlBytes.Length)).Any(b => b == (byte)'<');
+    /// <summary>
+    ///     defaultProfile.xml is normally binary CryXml; treat it as text only when it is not, and its first
+    ///     non-blank character (after an optional UTF-8 BOM) opens a tag.
+    /// </summary>
+    private static bool IsPlainXml(byte[] xmlBytes)
+    {
+        ReadOnlySpan<byte> data = xmlBytes;
+        if (data.StartsWith(Encoding.ASCII.GetBytes(SCConstants.CryXml.CryXmlSignature)))
+        {
+            return false;
+        }
+
+        if (data.StartsWith(Encoding.UTF8.Preamble))
+        {
+            data = data[Encoding.UTF8.Preamble.Length..];
+        }
+
+        int firstNonBlank = data.IndexOfAnyExcept(" \t\r\n"u8);
+        return firstNonBlank >= 0 && data[firstNonBlank] == (byte)'<';
+    }
 
 
     private static List<KeybindingActionData> FilterActionsWithBindings(List<KeybindingActionData> actions) =>

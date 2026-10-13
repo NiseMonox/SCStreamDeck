@@ -49,6 +49,18 @@ public sealed class LocalizationService(IP4KArchiveService p4KService, IFileSyst
         if (content != null)
         {
             Dictionary<string, string> parsed = ParseGlobalIni(content);
+
+            // Translations are partial; like the game, use the English text for keys they do not have.
+            if (!language.Equals(SCConstants.Localization.DefaultLanguage, StringComparison.OrdinalIgnoreCase))
+            {
+                IReadOnlyDictionary<string, string> english = await LoadGlobalIniAsync(channelPath,
+                    SCConstants.Localization.DefaultLanguage, dataP4KPath, cancellationToken).ConfigureAwait(false);
+                foreach ((string key, string value) in english)
+                {
+                    parsed.TryAdd(key, value);
+                }
+            }
+
             SetCache(cacheKey, parsed);
             return parsed;
         }
@@ -102,11 +114,15 @@ public sealed class LocalizationService(IP4KArchiveService p4KService, IFileSyst
     public void ClearCache(string channelPath, string language)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(language);
-        (string channelPath, string) cacheKey = (channelPath, language.ToUpperInvariant());
+        string normalizedLanguage = NormalizeLanguage(language);
 
         lock (_cacheLock)
         {
-            if (_cache.Remove(cacheKey))
+            // A translation is cached together with the English entries it falls back to.
+            bool removed = _cache.Remove((channelPath, normalizedLanguage));
+            removed |= _cache.Remove((channelPath, NormalizeLanguage(SCConstants.Localization.DefaultLanguage)));
+
+            if (removed)
             {
                 Log.Debug($"[{nameof(LocalizationService)}] Cleared cache for {language}");
             }

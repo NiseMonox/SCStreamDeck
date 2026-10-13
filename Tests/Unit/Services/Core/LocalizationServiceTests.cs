@@ -251,6 +251,68 @@ public sealed class LocalizationServiceTests
     }
 
     [Fact]
+    public async Task LoadGlobalIniAsync_FillsKeysMissingFromATranslationWithEnglish_AndClearCacheDropsBoth()
+    {
+        string channelPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        string dataP4KPath = Path.Combine(channelPath, SCConstants.Files.DataP4KFileName);
+
+        string OverridePath(string language) => Path.GetFullPath(Path.Combine(
+            channelPath,
+            "data",
+            SCConstants.Localization.LocalizationSubdirectory,
+            language,
+            SCConstants.Files.GlobalIniFileName));
+
+        P4KFileEntry Entry(string language) => new()
+        {
+            Path = $"Data/Localization/{language}/global.ini",
+            Offset = 0,
+            CompressedSize = 1,
+            UncompressedSize = 1,
+            IsCompressed = false
+        };
+
+        P4KFileEntry german = Entry("GERMAN_(GERMANY)");
+        P4KFileEntry english = Entry("ENGLISH");
+
+        Mock<IFileSystem> fileSystem = new(MockBehavior.Strict);
+        string germanOverride = OverridePath("GERMAN_(GERMANY)");
+        string englishOverride = OverridePath("ENGLISH");
+        fileSystem.Setup(x => x.FileExists(germanOverride)).Returns(false);
+        fileSystem.Setup(x => x.FileExists(englishOverride)).Returns(false);
+        fileSystem.Setup(x => x.FileExists(dataP4KPath)).Returns(true);
+
+        Mock<IP4KArchiveService> p4K = new(MockBehavior.Strict);
+        p4K.Setup(x => x.OpenArchiveAsync(dataP4KPath, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        p4K.Setup(x => x.ScanDirectoryAsync("Data/Localization/GERMAN_(GERMANY)", SCConstants.Files.GlobalIniFileName,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<P4KFileEntry> { german });
+        p4K.Setup(x => x.ScanDirectoryAsync("Data/Localization/ENGLISH", SCConstants.Files.GlobalIniFileName,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<P4KFileEntry> { english });
+        p4K.Setup(x => x.ReadFileAsTextAsync(german, It.IsAny<CancellationToken>())).ReturnsAsync("ui_A=Deutsch");
+        p4K.Setup(x => x.ReadFileAsTextAsync(english, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("ui_A=English\nui_B=Only in English");
+        p4K.Setup(x => x.CloseArchive());
+
+        LocalizationService service = new(p4K.Object, fileSystem.Object);
+
+        IReadOnlyDictionary<string, string> result = await service.LoadGlobalIniAsync(
+            channelPath,
+            "german_(germany)",
+            dataP4KPath,
+            CancellationToken.None);
+
+        result["@ui_A"].Should().Be("Deutsch");
+        result["@ui_B"].Should().Be("Only in English");
+
+        service.ClearCache(channelPath, "german_(germany)");
+        await service.LoadGlobalIniAsync(channelPath, "german_(germany)", dataP4KPath, CancellationToken.None);
+
+        p4K.Verify(x => x.OpenArchiveAsync(dataP4KPath, It.IsAny<CancellationToken>()), Times.Exactly(4));
+    }
+
+    [Fact]
     public async Task LoadGlobalIniAsync_ReturnsEmptyAndClosesArchive_WhenP4KReadThrows()
     {
         string channelPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
