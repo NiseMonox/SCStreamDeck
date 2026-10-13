@@ -8,6 +8,8 @@
 > - Double-tap activation modes really tap twice, so actions such as *Power Throttle Max* (double-tap F10) fire in-game.
 > - `global.ini` keys with a `,P` marker resolve, and categories missing from `global.ini` fall back to the action map name, so
 >   labels no longer show up as raw `@ui_...` keys.
+> - `Toggle Key` honors double-tap and long-press bindings, click sounds follow the default playback device, and settings
+>   survive plugin updates. See the [changelog](CHANGELOG.md) for everything else.
 > - The plugin UUID is `com.nisemonox.scstreamdeck`, so it installs next to the upstream plugin instead of replacing it.
 
 User Guide: [docs](docs/index.md)  
@@ -37,7 +39,8 @@ There is no prebuilt release of this fork yet. Build and install from source wit
 ```
 
 The script builds the plugin in Release, copies `PluginCore\bin\Release\com.nisemonox.scstreamdeck.sdPlugin` into
-`%APPDATA%\Elgato\StreamDeck\Plugins` (keeping the plugin's `cache` folder with its settings) and restarts Stream Deck.
+`%APPDATA%\Elgato\StreamDeck\Plugins` and restarts Stream Deck. Plugin settings and the generated keybindings live in
+`%LOCALAPPDATA%\com.nisemonox.scstreamdeck`, so they survive reinstalls and updates.
 
 Pushing a `v*` tag runs the release workflow, which publishes ready-to-install `.streamDeckPlugin` packages:
 

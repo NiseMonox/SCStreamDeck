@@ -15,6 +15,31 @@ Notes:
 
 ---
 
+## v1.3.1.0 - Patch Release
+
+### Bug Fixes
+
+- Actions that are declared only with `onPress="1"` (e.g. *Accept Invite* on `[`, *Throttle - Cruise Mode - Toggle* on `LAlt+C`, director-mode FoV / depth of field) were inferred as `double_tap` and, since v1.3.0.0, pressed twice. They are plain presses again; only actions that really say `double_tap` (or that you bound by double-tapping) are tapped twice.
+- The `activationMode` attribute is read regardless of its casing (`ActivationMode` / `activationmode` are used by 22 actions, e.g. *Stopwatch Reset (Long Press)*).
+- `Toggle Key` now performs the activation its function needs (double tap, or holding a long-press binding past its threshold) instead of always sending one short press.
+- Key down and key up of the same function are executed in the order they arrive, and a release can no longer interleave with a delayed hold that is just starting; either could leave a key held down in the game.
+- A delayed hold on a mouse-wheel binding stops scrolling when the key is released.
+- Click sounds follow the current default playback device. The audio output is only opened while a sound plays, instead of holding a silent stream open all the time, and a missing playback device no longer breaks every key.
+- Cached keybindings are regenerated after a plugin update, so parser fixes take effect immediately.
+- Folders that merely contain `Windows` or `System32` in their name (e.g. a user called `WindowsUser`) are no longer rejected as unsafe; only the real Windows directory is.
+- `defaultProfile.xml` is recognised as binary CryXml by its signature. Before, a stray `<` byte in its header would have made the whole keybinding import fail.
+- Function names missing from a translated `global.ini` fall back to English, like in the game, and the 17 label keys without a `ui_` prefix (e.g. *Toggle Equip Helmet*) are resolved.
+- A function whose keyboard slot holds a mouse axis (e.g. `LAlt+maxis_z`) is no longer sent as its bare modifier key.
+
+### Features / Improvements
+
+- Plugin settings and the generated keybindings moved from the plugin folder to `%LOCALAPPDATA%\com.nisemonox.scstreamdeck`, so they survive plugin updates. Existing settings are moved over on first start.
+- The parsed `global.ini` (about 90,000 entries) is released once the function names have been applied.
+
+### Internal / Refactor
+
+- One shared `KeybindingAction.GetExecutableBinding()` replaces three copies; `ExecutePress` delegates to `ExecutePressNoRepeat`.
+
 ## v1.3.0.0 - Minor Release (NiseMonox fork)
 
 > [!WARNING]
