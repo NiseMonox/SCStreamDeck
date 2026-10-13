@@ -37,10 +37,32 @@ public static class SecurePathValidator
         string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(baseDirectory);
 
     private static bool IsBlockedBaseDirectory(string baseDirectory) =>
-        baseDirectory.Contains("Windows", StringComparison.OrdinalIgnoreCase) ||
-        baseDirectory.Contains("System32", StringComparison.OrdinalIgnoreCase) ||
         baseDirectory.StartsWith(@"\\", StringComparison.Ordinal) ||
+        IsWindowsDirectoryOrBelow(baseDirectory) ||
         !Directory.Exists(baseDirectory);
+
+    private static bool IsWindowsDirectoryOrBelow(string directory)
+    {
+        string windowsDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+        if (string.IsNullOrEmpty(windowsDirectory))
+        {
+            return false;
+        }
+
+        try
+        {
+            string fullDirectory = Path.TrimEndingDirectorySeparator(Path.GetFullPath(directory));
+            string fullWindows = Path.TrimEndingDirectorySeparator(Path.GetFullPath(windowsDirectory));
+
+            return fullDirectory.Equals(fullWindows, StringComparison.OrdinalIgnoreCase) ||
+                   fullDirectory.StartsWith(fullWindows + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is ArgumentException or SecurityException or NotSupportedException or PathTooLongException)
+        {
+            // Unresolvable paths are treated as blocked.
+            return true;
+        }
+    }
 
     private static bool ContainsTraversalSequence(string path) => path.Contains("....", StringComparison.Ordinal);
 

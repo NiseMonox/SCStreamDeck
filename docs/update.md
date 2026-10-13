@@ -12,7 +12,7 @@
     You **need** to uninstall before installing a newer version. Keybindings are stored in your Stream Deck profile and will remain after uninstalling.
 
 !!! note
-    Your Stream Deck profile keeps the action placements. After reinstalling, open the `Control Panel` action and quickly verify settings such as preferred channel, language override, theme, and custom installation overrides if anything looks unexpected.
+    Your Stream Deck profile keeps the action placements. Since v1.3.1.0 the plugin settings (preferred channel, language override, theme, custom installation overrides) are stored in `%LOCALAPPDATA%\com.nisemonox.scstreamdeck` and survive a reinstall; when updating from an older version, open the `Control Panel` action and quickly verify them.
 
 ## Uninstall
 

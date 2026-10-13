@@ -18,14 +18,14 @@ public static class ServiceConfiguration
     /// <summary>
     ///     Registers all plugin services to service collection.
     /// </summary>
-    private static void AddPluginServices(this IServiceCollection services)
+    public static void AddPluginServices(this IServiceCollection services)
     {
         services.AddSingleton<IFileSystem, SystemFileSystem>();
 
         services.AddSingleton<IInputSimulator, InputSimulator>();
         services.AddSingleton<AudioPlayerService>();
 
-        services.AddSingleton<PathProviderService>();
+        services.AddSingleton(_ => PathProviderService.CreateForPlugin());
 
         services.AddSingleton<StateService>();
         services.AddSingleton<ThemeService>();

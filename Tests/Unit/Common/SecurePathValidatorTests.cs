@@ -42,6 +42,18 @@ public sealed class SecurePathValidatorTests
     }
 
     [Fact]
+    public void IsValidPath_BaseDirectoryNamedLikeWindows_IsNotBlocked()
+    {
+        string baseDir = Path.Combine(CreateTempDirectory(), "net8.0-windows", "System32-backup");
+        Directory.CreateDirectory(baseDir);
+
+        bool result = SecurePathValidator.IsValidPath("file.txt", baseDir, out string normalized);
+
+        result.Should().BeTrue();
+        normalized.Should().Be(Path.Combine(baseDir, "file.txt"));
+    }
+
+    [Fact]
     public void IsValidPath_UncBase_ReturnsFalse()
     {
         bool result = SecurePathValidator.IsValidPath("file.txt", @"\\server\\share", out string normalized);

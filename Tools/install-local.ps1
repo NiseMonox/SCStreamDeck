@@ -24,8 +24,8 @@ if ($app) {
 Get-Process $uuid -ErrorAction SilentlyContinue | Stop-Process -Force
 Start-Sleep -Milliseconds 500
 
-# Mirror, so files removed from the plugin disappear from the installed copy too. The plugin keeps its
-# settings and generated keybindings in "cache", and its logs next to the exe; those survive reinstalls.
+# Mirror, so files removed from the plugin disappear from the installed copy too. Logs next to the exe survive,
+# and so does a "cache" folder left by versions before 1.3.1, which the plugin moves to %LOCALAPPDATA% itself.
 robocopy $plugin $target /MIR /XD cache /XF *.log /NJH /NJS /NFL /NDL /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "Copy failed (robocopy exit code $LASTEXITCODE)." }
 $global:LASTEXITCODE = 0  # robocopy reports success as 1-7
