@@ -8,28 +8,25 @@ namespace SCStreamDeck.Services.Audio;
 
 /// <summary>
 ///     Audio player service using WASAPI shared mode with mixing support.
-///     Pre-initializes the audio output to reduce first-play latency.
+///     The output is opened on the current default playback device when a sound is played and closed again shortly
+///     after the last sound has ended, so the plugin holds no audio stream while idle and follows device changes.
 /// </summary>
 public sealed class AudioPlayerService : IDisposable
 {
-    private readonly MMDeviceEnumerator _deviceEnumerator;
+    private static readonly TimeSpan s_idleTimeout = TimeSpan.FromSeconds(5);
+    private static readonly WaveFormat s_mixerFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
+
+    private readonly Timer _idleTimer;
     private readonly Lock _lock = new();
-    private readonly MixingSampleProvider _mixer;
-    private readonly WasapiOut _outputDevice;
+    private int _activeInputs;
+    private MMDeviceEnumerator? _deviceEnumerator;
     private bool _disposed;
+    private MixingSampleProvider? _mixer;
+    private WasapiOut? _outputDevice;
+    private string? _outputDeviceId;
 
-    public AudioPlayerService()
-    {
-        _deviceEnumerator = new MMDeviceEnumerator();
-
-        MMDevice device = _deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-        _outputDevice = new WasapiOut(device, AudioClientShareMode.Shared, false, 50);
-
-        _mixer = new MixingSampleProvider(WaveFormat.CreateIeeeFloatWaveFormat(48000, 2)) { ReadFully = true };
-
-        _outputDevice.Init(_mixer);
-        _outputDevice.Play();
-    }
+    public AudioPlayerService() =>
+        _idleTimer = new Timer(_ => CloseOutputWhenIdle(), null, Timeout.Infinite, Timeout.Infinite);
 
     /// <summary>
     ///     Disposes audio resources.
@@ -41,11 +38,6 @@ public sealed class AudioPlayerService : IDisposable
     [ExcludeFromCodeCoverage]
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
         lock (_lock)
         {
             if (_disposed)
@@ -53,9 +45,10 @@ public sealed class AudioPlayerService : IDisposable
                 return;
             }
 
-            _outputDevice.Stop();
-            _outputDevice.Dispose();
-            _deviceEnumerator.Dispose();
+            CloseOutput();
+            _deviceEnumerator?.Dispose();
+            _deviceEnumerator = null;
+            _idleTimer.Dispose();
 
             _disposed = true;
         }
@@ -71,15 +64,120 @@ public sealed class AudioPlayerService : IDisposable
 
             try
             {
+                MixingSampleProvider mixer = EnsureOutput();
                 AudioReaderAdapter adapter = CreateReaderAdapter(filePath);
-                ISampleProvider sampleProvider = ConvertToMixerFormat(adapter);
-                _mixer.AddMixerInput(sampleProvider);
+
+                _idleTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                mixer.AddMixerInput(ConvertToMixerFormat(adapter));
+                Interlocked.Increment(ref _activeInputs);
             }
             catch (Exception ex)
             {
                 Log.Err($"[{nameof(AudioPlayerService)}] Failed to play audio: {ex.Message}", ex);
                 throw;
             }
+        }
+    }
+
+    /// <summary>
+    ///     Returns the mixer of an output that is playing on the current default device, opening a new output when
+    ///     there is none, the default device changed, or the previous output stopped (e.g. its device was removed).
+    ///     Marked as [ExcludeFromCodeCoverage] because it depends on the WASAPI audio device.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    private MixingSampleProvider EnsureOutput()
+    {
+        _deviceEnumerator ??= new MMDeviceEnumerator();
+        MMDevice device = _deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+
+        if (_mixer != null &&
+            _outputDevice is { PlaybackState: PlaybackState.Playing } &&
+            string.Equals(device.ID, _outputDeviceId, StringComparison.Ordinal))
+        {
+            device.Dispose();
+            return _mixer;
+        }
+
+        CloseOutput();
+
+        WasapiOut output = new(device, AudioClientShareMode.Shared, false, 50);
+        MixingSampleProvider mixer = new(s_mixerFormat) { ReadFully = true };
+        try
+        {
+            output.Init(mixer);
+            output.Play();
+        }
+        catch
+        {
+            output.Dispose();
+            throw;
+        }
+
+        mixer.MixerInputEnded += OnMixerInputEnded;
+        _outputDevice = output;
+        _outputDeviceId = device.ID;
+        _mixer = mixer;
+        return mixer;
+    }
+
+    [ExcludeFromCodeCoverage]
+    private void CloseOutput()
+    {
+        if (_mixer != null)
+        {
+            _mixer.MixerInputEnded -= OnMixerInputEnded;
+            _mixer = null;
+        }
+
+        WasapiOut? output = _outputDevice;
+        _outputDevice = null;
+        _outputDeviceId = null;
+
+        try
+        {
+            output?.Stop();
+            output?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Log.Debug($"[{nameof(AudioPlayerService)}] Failed to close audio output: {ex.Message}");
+        }
+
+        Interlocked.Exchange(ref _activeInputs, 0);
+    }
+
+    /// <summary>
+    ///     Runs on the audio thread, so it only counts and (re)arms the idle timer.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    private void OnMixerInputEnded(object? sender, SampleProviderEventArgs e)
+    {
+        if (Interlocked.Decrement(ref _activeInputs) > 0)
+        {
+            return;
+        }
+
+        try
+        {
+            _idleTimer.Change(s_idleTimeout, Timeout.InfiniteTimeSpan);
+        }
+        catch (ObjectDisposedException)
+        {
+            // The service was disposed while the last sound was ending.
+        }
+    }
+
+    [ExcludeFromCodeCoverage]
+    private void CloseOutputWhenIdle()
+    {
+        lock (_lock)
+        {
+            if (_disposed || Volatile.Read(ref _activeInputs) > 0)
+            {
+                return;
+            }
+
+            CloseOutput();
         }
     }
 
@@ -108,18 +206,18 @@ public sealed class AudioPlayerService : IDisposable
     ///     - Format conversion logic tested through Play() method integration
     /// </summary>
     [ExcludeFromCodeCoverage]
-    private ISampleProvider ConvertToMixerFormat(AudioReaderAdapter source)
+    private static ISampleProvider ConvertToMixerFormat(AudioReaderAdapter source)
     {
         ISampleProvider sampleProvider = source;
 
-        if (sampleProvider.WaveFormat.Channels == 1 && _mixer.WaveFormat.Channels == 2)
+        if (sampleProvider.WaveFormat.Channels == 1 && s_mixerFormat.Channels == 2)
         {
             sampleProvider = new MonoToStereoSampleProvider(sampleProvider);
         }
 
-        if (sampleProvider.WaveFormat.SampleRate != _mixer.WaveFormat.SampleRate)
+        if (sampleProvider.WaveFormat.SampleRate != s_mixerFormat.SampleRate)
         {
-            sampleProvider = new WdlResamplingSampleProvider(sampleProvider, _mixer.WaveFormat.SampleRate);
+            sampleProvider = new WdlResamplingSampleProvider(sampleProvider, s_mixerFormat.SampleRate);
         }
 
         return sampleProvider;
