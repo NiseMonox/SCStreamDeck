@@ -159,19 +159,7 @@ public sealed class AdaptiveDial(SDConnection connection, InitialPayload payload
     internal static string? ResolveExecutableBinding(KeybindingAction action)
     {
         ArgumentNullException.ThrowIfNull(action);
-
-        if (!string.IsNullOrWhiteSpace(action.KeyboardBinding))
-        {
-            return action.KeyboardBinding;
-        }
-
-        if (string.IsNullOrWhiteSpace(action.MouseBinding))
-        {
-            return null;
-        }
-
-        InputType bindingType = action.MouseBinding.GetInputType();
-        return bindingType is InputType.MouseButton or InputType.MouseWheel ? action.MouseBinding : null;
+        return action.GetExecutableBinding();
     }
 
     private async Task ExecuteKeybindingAsync(KeybindingExecutionContext context)

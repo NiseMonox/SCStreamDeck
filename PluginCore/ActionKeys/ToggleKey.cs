@@ -198,7 +198,7 @@ public sealed class ToggleKey : SCActionBase
         Log.Debug($"[{nameof(ToggleKey)}] Execute pressId={pressId} sdkState={payload.State} action={action.ActionName}");
 #endif
 
-        bool success = await KeybindingService.ExecutePressNoRepeatAsync(
+        bool success = await KeybindingService.ExecuteOneShotAsync(
                 Settings.Function!,
                 executableBinding,
                 lifetimeToken)
@@ -328,7 +328,7 @@ public sealed class ToggleKey : SCActionBase
             return null;
         }
 
-        string? executableBinding = GetExecutableBinding(action);
+        string? executableBinding = action.GetExecutableBinding();
 
         if (executableBinding == null)
         {
@@ -336,23 +336,6 @@ public sealed class ToggleKey : SCActionBase
         }
 
         return (action, executableBinding);
-    }
-
-    [ExcludeFromCodeCoverage]
-    private static string? GetExecutableBinding(KeybindingAction action)
-    {
-        if (!string.IsNullOrWhiteSpace(action.KeyboardBinding))
-        {
-            return action.KeyboardBinding;
-        }
-
-        if (string.IsNullOrWhiteSpace(action.MouseBinding))
-        {
-            return null;
-        }
-
-        InputType bindingType = action.MouseBinding.GetInputType();
-        return bindingType is InputType.MouseButton or InputType.MouseWheel ? action.MouseBinding : null;
     }
 }
 

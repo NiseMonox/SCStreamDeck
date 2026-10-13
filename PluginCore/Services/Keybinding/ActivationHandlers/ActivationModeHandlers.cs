@@ -70,7 +70,7 @@ internal sealed class ImmediatePressHandler(Func<DateTime>? utcNow = null) : IAc
         }
         else if (context.Metadata.MultiTap > 1)
         {
-            result = ExecuteMultiTap(context, executor);
+            result = ExecuteMultiTap(executor, context.Input, context.Metadata.MultiTap);
         }
         else
         {
@@ -145,18 +145,18 @@ internal sealed class ImmediatePressHandler(Func<DateTime>? utcNow = null) : IAc
     ///     Double-tap modes (MultiTap = 2) only fire in-game when the input is tapped that many times in quick succession.
     ///     Each tap holds the key ~50 ms, so the whole sequence stays well inside Star Citizen's multi-tap window.
     /// </summary>
-    private static bool ExecuteMultiTap(ActivationExecutionContext context, IInputExecutor executor)
+    internal static bool ExecuteMultiTap(IInputExecutor executor, ParsedInput input, int tapCount)
     {
         const int gapBetweenTapsMs = 50;
 
-        for (int tap = 0; tap < context.Metadata.MultiTap; tap++)
+        for (int tap = 0; tap < tapCount; tap++)
         {
             if (tap > 0)
             {
                 Thread.Sleep(gapBetweenTapsMs);
             }
 
-            if (!executor.ExecutePressNoRepeat(context.Input))
+            if (!executor.ExecutePressNoRepeat(input))
             {
                 return false;
             }

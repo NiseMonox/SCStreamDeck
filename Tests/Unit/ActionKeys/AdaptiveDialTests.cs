@@ -169,6 +169,16 @@ public sealed class AdaptiveDialTests
     }
 
     [Fact]
+    public void ResolveExecutableBinding_ReturnsNull_ForAxisInKeyboardSlot()
+    {
+        KeybindingAction action = CreateAction(keyboardBinding: "lalt+maxis_z");
+
+        string? result = AdaptiveDial.ResolveExecutableBinding(action);
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
     public void ResolveExecutableBinding_ReturnsNull_WhenNoSupportedBindingExists()
     {
         KeybindingAction action = CreateAction();

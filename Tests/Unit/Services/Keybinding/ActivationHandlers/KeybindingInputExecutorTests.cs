@@ -197,6 +197,45 @@ public sealed class KeybindingInputExecutorTests
         keyboard.Verify(k => k.KeyUp(DirectInputKeyCode.DikLalt), Times.Once);
     }
 
+    [Fact]
+    public void ScheduleDelayedHold_MouseWheel_StopsScrollingOnRelease()
+    {
+        (KeybindingInputExecutor executor, Mock<IMouseSimulator> mouse, _) = CreateExecutor();
+        int scrolls = 0;
+        mouse.Setup(m => m.VerticalScroll(1))
+            .Callback(() => Interlocked.Increment(ref scrolls))
+            .Returns(mouse.Object);
+
+        ParsedInput input = new() { Type = InputType.MouseWheel, Value = 1 };
+
+        executor.ScheduleDelayedHold(input, "action", 0.01f);
+        SpinWait.SpinUntil(() => Volatile.Read(ref scrolls) > 0, TimeSpan.FromSeconds(2)).Should().BeTrue();
+
+        executor.ExecuteUp(input, "action");
+        Thread.Sleep(100); // let a tick that was already running finish
+        int afterRelease = Volatile.Read(ref scrolls);
+        Thread.Sleep(250);
+
+        Volatile.Read(ref scrolls).Should().Be(afterRelease, "the repeat timer must be disposed when the key is released");
+    }
+
+    [Fact]
+    public void ScheduleDelayedHold_ReleasedBeforeTheDelay_NeverPressesTheKey()
+    {
+        (KeybindingInputExecutor executor, _, Mock<IKeyboardSimulator> keyboard) = CreateExecutor();
+        ParsedInput input = new()
+        {
+            Type = InputType.Keyboard,
+            Value = (Array.Empty<DirectInputKeyCode>(), new[] { DirectInputKeyCode.DikF1 })
+        };
+
+        executor.ScheduleDelayedHold(input, "action", 0.1f);
+        executor.CancelDelayedHold("action");
+        executor.ExecuteUp(input, "action");
+        Thread.Sleep(250);
+
+        keyboard.Verify(k => k.KeyDown(It.IsAny<DirectInputKeyCode>()), Times.Never);
+    }
 
     private static (KeybindingInputExecutor Executor, Mock<IMouseSimulator> Mouse, Mock<IKeyboardSimulator> Keyboard)
         CreateExecutor()

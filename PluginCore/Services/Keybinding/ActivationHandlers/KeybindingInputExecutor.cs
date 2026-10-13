@@ -22,39 +22,10 @@ internal sealed class KeybindingInputExecutor(
 
     private readonly IInputSimulator _inputSimulator = inputSimulator ?? throw new ArgumentNullException(nameof(inputSimulator));
 
-    public bool ExecutePress(ParsedInput input)
-    {
-        switch (input.Type)
-        {
-            case InputType.Keyboard:
-                (DirectInputKeyCode[] modifiers, DirectInputKeyCode[] keys) =
-                    ((DirectInputKeyCode[], DirectInputKeyCode[]))input.Value;
+    // Serializes hold start/stop so a release cannot interleave with a delayed hold that is just starting.
+    private readonly Lock _holdGate = new();
 
-                foreach (DirectInputKeyCode key in keys)
-                {
-                    if (modifiers.Length > 0)
-                    {
-                        _inputSimulator.Keyboard.DelayedModifiedKeyStroke(modifiers, key, 50);
-                    }
-                    else
-                    {
-                        _inputSimulator.Keyboard.DelayedKeyPress(key, 50);
-                    }
-                }
-
-                return true;
-
-            case InputType.MouseButton:
-                ExecuteMouseButtonClick(input.Value);
-                return true;
-
-            case InputType.MouseWheel:
-                ExecuteMouseWheelPress(input.Value);
-                return true;
-        }
-
-        return false;
-    }
+    public bool ExecutePress(ParsedInput input) => ExecutePressNoRepeat(input);
 
     public bool ExecutePressNoRepeat(ParsedInput input)
     {
@@ -93,56 +64,62 @@ internal sealed class KeybindingInputExecutor(
 
     public bool ExecuteDown(ParsedInput input, string actionKey)
     {
-        if (!_holdStates.TryAdd(actionKey, 1))
+        lock (_holdGate)
         {
-            return true;
-        }
-
-        switch (input.Type)
-        {
-            case InputType.Keyboard:
-                return ExecuteKeyboardDown(input.Value, actionKey);
-
-            case InputType.MouseButton:
-                ExecuteMouseButtonDown(input.Value);
+            if (!_holdStates.TryAdd(actionKey, 1))
+            {
                 return true;
+            }
 
-            case InputType.MouseWheel:
-                ExecuteMouseWheelDown(input.Value, actionKey);
-                return true;
+            switch (input.Type)
+            {
+                case InputType.Keyboard:
+                    return ExecuteKeyboardDown(input.Value, actionKey);
 
-            default:
-                return true;
+                case InputType.MouseButton:
+                    ExecuteMouseButtonDown(input.Value);
+                    return true;
+
+                case InputType.MouseWheel:
+                    ExecuteMouseWheelDown(input.Value, actionKey);
+                    return true;
+
+                default:
+                    return true;
+            }
         }
     }
 
     public bool ExecuteUp(ParsedInput input, string actionKey)
     {
-        if (!_holdStates.TryRemove(actionKey, out _))
+        lock (_holdGate)
         {
-            return true;
-        }
-
-        if (_activationTimers.TryRemove(actionKey, out Timer? timer))
-        {
-            timer.Dispose();
-        }
-
-        switch (input.Type)
-        {
-            case InputType.Keyboard:
-                return ExecuteKeyboardUp(input.Value);
-
-            case InputType.MouseButton:
-                ExecuteMouseButtonUp(input.Value);
+            if (!_holdStates.TryRemove(actionKey, out _))
+            {
                 return true;
+            }
 
-            case InputType.MouseWheel:
-                ReleaseMouseWheelModifiers(input.Value);
-                return true;
+            if (_activationTimers.TryRemove(actionKey, out Timer? timer))
+            {
+                timer.Dispose();
+            }
 
-            default:
-                return true;
+            switch (input.Type)
+            {
+                case InputType.Keyboard:
+                    return ExecuteKeyboardUp(input.Value);
+
+                case InputType.MouseButton:
+                    ExecuteMouseButtonUp(input.Value);
+                    return true;
+
+                case InputType.MouseWheel:
+                    ReleaseMouseWheelModifiers(input.Value);
+                    return true;
+
+                default:
+                    return true;
+            }
         }
     }
 
@@ -170,12 +147,25 @@ internal sealed class KeybindingInputExecutor(
         CancelExistingTimer(actionKey);
 
         int delayMs = (int)(delaySeconds * 1000);
-        Timer timer = new(_ =>
+        Timer? timer = null;
+        timer = new Timer(_ =>
         {
-            ExecuteDown(input, actionKey);
-            _activationTimers.TryRemove(actionKey, out Timer? _);
-        }, null, delayMs, Timeout.Infinite);
+            lock (_holdGate)
+            {
+                // Start holding only if this timer is still the pending one (a release cancels it), and drop it
+                // first: ExecuteDown may register its own repeat timer (mouse wheel) under the same key.
+                if (timer == null || !_activationTimers.TryRemove(new KeyValuePair<string, Timer>(actionKey, timer)))
+                {
+                    return;
+                }
+
+                timer.Dispose();
+                ExecuteDown(input, actionKey);
+            }
+        }, null, Timeout.Infinite, Timeout.Infinite);
+
         _activationTimers[actionKey] = timer;
+        timer.Change(delayMs, Timeout.Infinite);
 
         return true;
     }

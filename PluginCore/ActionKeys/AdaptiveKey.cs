@@ -90,7 +90,7 @@ public sealed class AdaptiveKey(SDConnection connection, InitialPayload payload)
             return null;
         }
 
-        string? executableBinding = GetExecutableBinding(action);
+        string? executableBinding = action.GetExecutableBinding();
 
         if (executableBinding == null)
         {
@@ -98,30 +98,6 @@ public sealed class AdaptiveKey(SDConnection connection, InitialPayload payload)
         }
 
         return (action, executableBinding);
-    }
-
-    /// <summary>
-    ///     Gets executable binding from keybinding action.
-    ///     Marked as [ExcludeFromCodeCoverage] because:
-    ///     - Part of ValidateAndResolve call chain (SDK dependencies)
-    ///     - Unit testing covered through KeybindingAction tests
-    ///     - Integration testing requires Stream Deck runtime
-    /// </summary>
-    [ExcludeFromCodeCoverage]
-    private static string? GetExecutableBinding(KeybindingAction action)
-    {
-        if (!string.IsNullOrWhiteSpace(action.KeyboardBinding))
-        {
-            return action.KeyboardBinding;
-        }
-
-        if (string.IsNullOrWhiteSpace(action.MouseBinding))
-        {
-            return null;
-        }
-
-        InputType bindingType = action.MouseBinding.GetInputType();
-        return bindingType is InputType.MouseButton or InputType.MouseWheel ? action.MouseBinding : null;
     }
 
     private async Task ExecuteKeybindingAsync(KeybindingExecutionContext context)

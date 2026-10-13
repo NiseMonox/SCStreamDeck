@@ -10,6 +10,147 @@ namespace Tests.Unit.Services.Keybinding;
 
 public sealed class KeybindingExecutorServiceTests
 {
+    private static KeybindingLoaderService CreateLoader(ActivationMode mode, ActivationModeMetadata metadata)
+    {
+        KeybindingLoaderService loader = new(new SystemFileSystem());
+        loader.LoadKeybindings(new KeybindingDataFile
+        {
+            Metadata = new KeybindingMetadata
+            {
+                ActivationModes = new Dictionary<string, ActivationModeMetadata> { [mode.ToString()] = metadata }
+            },
+            Actions =
+            [
+                new KeybindingActionData
+                {
+                    Name = "test_action",
+                    MapName = "test_map",
+                    Label = "Test",
+                    Category = "Test",
+                    ActivationMode = mode,
+                    Bindings = new InputBindings { Keyboard = "f1" }
+                }
+            ]
+        }).Should().BeTrue();
+
+        return loader;
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_HoldMode_PressesBeforeReleasing_WhenDownAndUpArriveBackToBack()
+    {
+        List<string> order = [];
+
+        Mock<IKeyboardSimulator> keyboard = new(MockBehavior.Strict);
+        keyboard.Setup(k => k.KeyDown(DirectInputKeyCode.DikF1))
+            .Callback(() =>
+            {
+                Thread.Sleep(50); // give the release every chance to overtake the press
+                lock (order)
+                {
+                    order.Add("down");
+                }
+            })
+            .Returns(keyboard.Object);
+        keyboard.Setup(k => k.KeyUp(DirectInputKeyCode.DikF1))
+            .Callback(() =>
+            {
+                lock (order)
+                {
+                    order.Add("up");
+                }
+            })
+            .Returns(keyboard.Object);
+
+        Mock<IInputSimulator> inputSimulator = new(MockBehavior.Strict);
+        inputSimulator.SetupGet(i => i.Keyboard).Returns(keyboard.Object);
+
+        KeybindingExecutorService service = new(new KeybindingLoaderService(new SystemFileSystem()), inputSimulator.Object);
+
+        KeybindingExecutionContext Context(bool isKeyDown) => new()
+        {
+            ActionName = "test_action",
+            Binding = "f1",
+            ActivationMode = ActivationMode.hold,
+            IsKeyDown = isKeyDown
+        };
+
+        Task<bool> down = service.ExecuteAsync(Context(true));
+        Task<bool> up = service.ExecuteAsync(Context(false));
+        await Task.WhenAll(down, up);
+
+        order.Should().Equal("down", "up");
+    }
+
+    [Fact]
+    public async Task ExecuteOneShotAsync_DoubleTapAction_TapsTwice()
+    {
+        KeybindingLoaderService loader = CreateLoader(ActivationMode.double_tap,
+            new ActivationModeMetadata { OnPress = true, MultiTap = 2, MultiTapBlock = 1 });
+
+        Mock<IKeyboardSimulator> keyboard = new(MockBehavior.Strict);
+        keyboard.Setup(k => k.DelayedKeyPress(DirectInputKeyCode.DikF1, 50)).Returns(keyboard.Object);
+
+        Mock<IInputSimulator> inputSimulator = new(MockBehavior.Strict);
+        inputSimulator.SetupGet(i => i.Keyboard).Returns(keyboard.Object);
+
+        KeybindingExecutorService service = new(loader, inputSimulator.Object);
+
+        bool result = await service.ExecuteOneShotAsync("test_action", "f1");
+
+        result.Should().BeTrue();
+        keyboard.Verify(k => k.DelayedKeyPress(DirectInputKeyCode.DikF1, 50), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task ExecuteOneShotAsync_LongPressAction_HoldsTheKeyPastItsThreshold()
+    {
+        KeybindingLoaderService loader = CreateLoader(ActivationMode.delayed_press,
+            new ActivationModeMetadata { OnPress = true, MultiTap = 1, PressTriggerThreshold = 0.1f });
+
+        long downAt = 0;
+        long upAt = 0;
+        Mock<IKeyboardSimulator> keyboard = new(MockBehavior.Strict);
+        keyboard.Setup(k => k.KeyDown(DirectInputKeyCode.DikF1))
+            .Callback(() => downAt = Environment.TickCount64)
+            .Returns(keyboard.Object);
+        keyboard.Setup(k => k.KeyUp(DirectInputKeyCode.DikF1))
+            .Callback(() => upAt = Environment.TickCount64)
+            .Returns(keyboard.Object);
+
+        Mock<IInputSimulator> inputSimulator = new(MockBehavior.Strict);
+        inputSimulator.SetupGet(i => i.Keyboard).Returns(keyboard.Object);
+
+        KeybindingExecutorService service = new(loader, inputSimulator.Object);
+
+        bool result = await service.ExecuteOneShotAsync("test_action", "f1");
+
+        result.Should().BeTrue();
+        keyboard.Verify(k => k.KeyDown(DirectInputKeyCode.DikF1), Times.Once);
+        keyboard.Verify(k => k.KeyUp(DirectInputKeyCode.DikF1), Times.Once);
+        (upAt - downAt).Should().BeGreaterThanOrEqualTo(150, "the key must stay down for the 0.1 s threshold plus a margin");
+    }
+
+    [Fact]
+    public async Task ExecuteOneShotAsync_PressAction_PressesOnce()
+    {
+        KeybindingLoaderService loader = CreateLoader(ActivationMode.press,
+            new ActivationModeMetadata { OnPress = true, MultiTap = 1, PressTriggerThreshold = -1f });
+
+        Mock<IKeyboardSimulator> keyboard = new(MockBehavior.Strict);
+        keyboard.Setup(k => k.DelayedKeyPress(DirectInputKeyCode.DikF1, 50)).Returns(keyboard.Object);
+
+        Mock<IInputSimulator> inputSimulator = new(MockBehavior.Strict);
+        inputSimulator.SetupGet(i => i.Keyboard).Returns(keyboard.Object);
+
+        KeybindingExecutorService service = new(loader, inputSimulator.Object);
+
+        bool result = await service.ExecuteOneShotAsync("test_action", "f1");
+
+        result.Should().BeTrue();
+        keyboard.Verify(k => k.DelayedKeyPress(DirectInputKeyCode.DikF1, 50), Times.Once);
+    }
+
     [Fact]
     public async Task ExecutePressNoRepeatAsync_KeyboardSingleKey_ExecutesDelayedKeyPress()
     {

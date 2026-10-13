@@ -47,6 +47,12 @@ public sealed class KeybindingService(
         CancellationToken cancellationToken = default) =>
         await _executorService.ExecutePressNoRepeatAsync(actionName, binding, cancellationToken).ConfigureAwait(false);
 
+    internal async Task<bool> ExecuteOneShotAsync(
+        string actionName,
+        string binding,
+        CancellationToken cancellationToken = default) =>
+        await _executorService.ExecuteOneShotAsync(actionName, binding, cancellationToken).ConfigureAwait(false);
+
     public bool TryGetAction(string? actionName, out KeybindingAction? action) =>
         _loaderService.TryGetAction(actionName, out action);
 
