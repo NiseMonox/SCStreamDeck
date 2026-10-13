@@ -186,8 +186,10 @@ public sealed class KeybindingMetadataServiceTests
         }
     }
 
-    [Fact]
-    public void NeedsRegeneration_ReturnsFalse_WhenActionMapsUnchangedAndMetadataMatches()
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void NeedsRegeneration_WhenFilesAreUnchanged_OnlyIfGeneratedByAnotherPluginBuild(bool sameBuild, bool expected)
     {
         string tempDir = Directory.CreateTempSubdirectory().FullName;
 
@@ -215,6 +217,7 @@ public sealed class KeybindingMetadataServiceTests
                 Metadata = new KeybindingMetadata
                 {
                     SchemaVersion = SCConstants.Keybindings.JsonSchemaVersion,
+                    GeneratorBuildId = sameBuild ? SCConstants.Keybindings.GeneratorBuildId : "another-build",
                     ExtractedAt = DateTime.UtcNow,
                     Language = "english",
                     DataP4KPath = dataP4K,
@@ -232,7 +235,7 @@ public sealed class KeybindingMetadataServiceTests
 
             bool result = service.NeedsRegeneration(jsonPath, install);
 
-            result.Should().BeFalse();
+            result.Should().Be(expected);
         }
         finally
         {

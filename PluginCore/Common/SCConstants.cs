@@ -35,6 +35,11 @@ public static class SCConstants
     {
         // Bump when the shape/meaning of cached *-keybindings.json changes.
         public const int JsonSchemaVersion = 2;
+
+        // Identifies the plugin build that generated a cached *-keybindings.json. It changes whenever the code
+        // changes, so parsing fixes take effect without waiting for a game patch or an in-game rebind.
+        public static readonly string GeneratorBuildId =
+            typeof(SCConstants).Assembly.ManifestModule.ModuleVersionId.ToString("N");
     }
 
     #endregion

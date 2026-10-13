@@ -65,6 +65,7 @@ public sealed class KeybindingOutputService(IFileSystem fileSystem) : IKeybindin
         KeybindingMetadata metadata = new()
         {
             SchemaVersion = SCConstants.Keybindings.JsonSchemaVersion,
+            GeneratorBuildId = SCConstants.Keybindings.GeneratorBuildId,
             ExtractedAt = DateTime.UtcNow,
             Language = language,
             DataP4KPath = NormalizePath(installation.DataP4KPath),

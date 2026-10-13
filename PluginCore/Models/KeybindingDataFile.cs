@@ -20,6 +20,8 @@ public sealed class KeybindingMetadata
 {
     [JsonProperty("schemaVersion")] public int SchemaVersion { get; set; }
 
+    [JsonProperty("generatorBuildId")] public string? GeneratorBuildId { get; set; }
+
     [JsonProperty("extractedAt")] public DateTime ExtractedAt { get; set; }
 
     [JsonProperty("language")] public string Language { get; set; } = "english";
