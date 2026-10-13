@@ -307,6 +307,47 @@ public sealed class KeybindingXmlParserServiceTests
     }
 
     [Fact]
+    public void ParseXmlToActions_InfersPress_NotDoubleTap_FromOnPressAlone()
+    {
+        // Same order as the game's defaultProfile.xml: double_tap shares press's flags and is declared first.
+        string xml = @"<root>
+  <ActivationMode name=""tap"" onPress=""0"" onHold=""0"" onRelease=""1"" multiTap=""1"" retriggerable=""0"" />
+  <ActivationMode name=""double_tap"" onPress=""1"" onHold=""0"" onRelease=""0"" multiTap=""2"" retriggerable=""0"" />
+  <ActivationMode name=""press"" onPress=""1"" onHold=""0"" onRelease=""0"" multiTap=""1"" retriggerable=""0"" />
+  <ActivationMode name=""delayed_press"" onPress=""1"" onHold=""0"" onRelease=""0"" multiTap=""1"" pressTriggerThreshold=""0.25"" retriggerable=""0"" />
+  <actionmap name=""test"" UILabel=""@map"" UICategory=""@category"">
+    <action name=""ui_notification_accept"" UILabel=""@label"" onPress=""1"" keyboard=""lbracket"" />
+    <action name=""v_power_throttle_max"" UILabel=""@label"" activationMode=""double_tap"" keyboard=""f10"" />
+  </actionmap>
+</root>";
+
+        List<KeybindingActionData> actions = _service.ParseXmlToActions(xml);
+
+        actions.Should().HaveCount(2);
+        actions[0].ActivationMode.Should().Be(ActivationMode.press);
+        actions[1].ActivationMode.Should().Be(ActivationMode.double_tap);
+    }
+
+    [Theory]
+    [InlineData("activationMode")]
+    [InlineData("ActivationMode")]
+    [InlineData("activationmode")]
+    public void ParseXmlToActions_ReadsActivationModeAttribute_RegardlessOfCase(string attributeName)
+    {
+        string xml = $@"<root>
+  <actionmap name=""test"" UILabel=""@map"" UICategory=""@category"">
+    <action name=""stopwatch_reset"" {attributeName}=""delayed_press"" keyboard=""f1"" UILabel=""@label"" />
+  </actionmap>
+</root>";
+
+        List<KeybindingActionData> actions = _service.ParseXmlToActions(xml);
+
+        actions.Should().ContainSingle();
+        actions[0].ActivationMode.Should().Be(ActivationMode.delayed_press);
+        actions[0].Bindings.Keyboard.Should().Be("f1");
+    }
+
+    [Fact]
     public void ParseXmlToActions_SkipsPressTapModes_WhenOnPressAndOnPresent()
     {
         string xml = @"<root>

@@ -109,6 +109,31 @@ public sealed class KeybindingXmlParserService : IKeybindingXmlParserService
         return !string.IsNullOrWhiteSpace(value);
     }
 
+    /// <summary>
+    ///     Reads an attribute whose casing varies in defaultProfile.xml (activationMode / ActivationMode / activationmode).
+    /// </summary>
+    private static string? GetAttributeIgnoreCase(XmlReader xmlReader, string attributeName)
+    {
+        string? exact = xmlReader.GetAttribute(attributeName);
+        if (exact != null || !xmlReader.HasAttributes)
+        {
+            return exact;
+        }
+
+        string? value = null;
+        while (xmlReader.MoveToNextAttribute())
+        {
+            if (xmlReader.Name.Equals(attributeName, StringComparison.OrdinalIgnoreCase))
+            {
+                value = xmlReader.Value;
+                break;
+            }
+        }
+
+        xmlReader.MoveToElement();
+        return value;
+    }
+
     private static bool GetBool01Attribute(XmlReader xmlReader, string attributeName) =>
         xmlReader.GetAttribute(attributeName) == "1";
 
@@ -183,7 +208,7 @@ public sealed class KeybindingXmlParserService : IKeybindingXmlParserService
         string uiDescription = xmlReader.GetAttribute("UIDescription") ?? string.Empty;
 
         // Try to get explicit activationMode, otherwise infer from action attributes
-        string activationModeStr = xmlReader.GetAttribute("activationMode") ?? string.Empty;
+        string activationModeStr = GetAttributeIgnoreCase(xmlReader, "activationMode") ?? string.Empty;
         ActivationMode activationMode = !string.IsNullOrWhiteSpace(activationModeStr)
             ? ParseActivationMode(activationModeStr)
             : InferActivationModeFromAttributes(xmlReader, activationModes, actionName);
@@ -465,6 +490,13 @@ public sealed class KeybindingXmlParserService : IKeybindingXmlParserService
             if (onPress && onRelease && !onHold &&
                 (kvp.Key.Contains("press", StringComparison.OrdinalIgnoreCase) ||
                  kvp.Key.Contains("tap", StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            // The on/off flags cannot express a multi-tap count or a delay, so they never imply those modes.
+            // (double_tap shares its flags with press and is declared before it in defaultProfile.xml.)
+            if (mode.MultiTap > 1 || mode.PressTriggerThreshold > 0 || mode.ReleaseTriggerDelay > 0)
             {
                 continue;
             }
